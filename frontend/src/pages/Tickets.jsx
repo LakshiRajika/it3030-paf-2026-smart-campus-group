@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import ticketService from '../services/ticketService';
 import { TicketForm, StatusBadge } from '../components/ticket/TicketForm';
 
 const Tickets = () => {
+  const navigate = useNavigate();
   const [tickets, setTickets] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(true);
