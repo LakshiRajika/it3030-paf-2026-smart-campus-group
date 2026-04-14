@@ -122,13 +122,23 @@ const TicketDetail = () => {
 
             {ticket.attachments && ticket.attachments.length > 0 && (
               <div className="mt-8 border-t border-slate-50 pt-6">
-                <h4 className="text-sm font-bold text-slate-400 uppercase mb-4">Attachments</h4>
-                <div className="flex gap-4">
+                <h4 className="text-sm font-bold text-slate-400 uppercase mb-4 tracking-wider">Attachments</h4>
+                <div className="flex flex-wrap gap-4">
                   {ticket.attachments.map((file, idx) => (
-                    <div key={idx} className="w-24 h-24 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center hover:border-indigo-200 transition-colors cursor-pointer group">
-                      <svg className="w-8 h-8 text-slate-300 group-hover:text-indigo-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
+                    <div 
+                      key={idx} 
+                      onClick={() => window.open(`http://localhost:8080/api/tickets/uploads/${file}`, '_blank')}
+                      className="w-32 h-32 rounded-2xl bg-slate-50 border border-slate-100 overflow-hidden hover:border-indigo-400 transition-all cursor-zoom-in group shadow-sm hover:shadow-md"
+                    >
+                      <img 
+                        src={`http://localhost:8080/api/tickets/uploads/${file}`} 
+                        alt="Attachment" 
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                        onError={(e) => {
+                          e.target.onerror = null; 
+                          e.target.src = 'https://placehold.co/400?text=Image+Error';
+                        }}
+                      />
                     </div>
                   ))}
                 </div>
