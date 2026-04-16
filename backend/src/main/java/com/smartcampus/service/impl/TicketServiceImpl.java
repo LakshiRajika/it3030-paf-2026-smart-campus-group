@@ -26,11 +26,15 @@ import java.util.List;
 import java.util.UUID;
 
 @Service
-@RequiredArgsConstructor
 public class TicketServiceImpl implements TicketService {
 
     private final TicketRepository ticketRepository;
     private final TicketCommentRepository commentRepository;
+
+    public TicketServiceImpl(TicketRepository ticketRepository, TicketCommentRepository commentRepository) {
+        this.ticketRepository = ticketRepository;
+        this.commentRepository = commentRepository;
+    }
 
     private final String UPLOAD_DIR = "uploads/";
 

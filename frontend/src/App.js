@@ -1,13 +1,17 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, Link, NavLink } from 'react-router-dom';
 import Tickets from './pages/Tickets';
 import TicketDetail from './pages/TicketDetail';
+import Bookings from './pages/Bookings';
+import ManageBookings from './pages/admin/ManageBookings';
+import { AuthProvider } from './context/AuthContext';
 import './index.css';
 
 function App() {
   return (
     <Router>
-      <div className="min-h-screen bg-slate-50 flex flex-col">
+      <AuthProvider>
+        <div className="min-h-screen bg-slate-50 flex flex-col">
         {/* Simple Header */}
         <header className="bg-white border-b border-slate-200 sticky top-0 z-50">
           <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
@@ -21,10 +25,11 @@ function App() {
             </div>
             
             <nav className="hidden md:flex items-center gap-8">
-              <button onClick={() => window.location.href='/dashboard'} className="text-slate-500 font-semibold hover:text-indigo-600 transition-colors">Dashboard</button>
-              <button onClick={() => window.location.href='/tickets'} className="text-indigo-600 font-semibold border-b-2 border-indigo-600 pb-1">Tickets</button>
-              <button onClick={() => window.location.href='/facilities'} className="text-slate-500 font-semibold hover:text-indigo-600 transition-colors">Facilities</button>
-              <button onClick={() => window.location.href='/bookings'} className="text-slate-500 font-semibold hover:text-indigo-600 transition-colors">Bookings</button>
+              <NavLink to="/dashboard" className={({ isActive }) => isActive ? "text-indigo-600 font-semibold border-b-2 border-indigo-600 pb-1" : "text-slate-500 font-semibold hover:text-indigo-600 transition-colors"}>Dashboard</NavLink>
+              <NavLink to="/tickets" className={({ isActive }) => isActive ? "text-indigo-600 font-semibold border-b-2 border-indigo-600 pb-1" : "text-slate-500 font-semibold hover:text-indigo-600 transition-colors"}>Tickets</NavLink>
+              <NavLink to="/facilities" className={({ isActive }) => isActive ? "text-indigo-600 font-semibold border-b-2 border-indigo-600 pb-1" : "text-slate-500 font-semibold hover:text-indigo-600 transition-colors"}>Facilities</NavLink>
+              <NavLink to="/bookings" className={({ isActive }) => isActive ? "text-indigo-600 font-semibold border-b-2 border-indigo-600 pb-1" : "text-slate-500 font-semibold hover:text-indigo-600 transition-colors"}>Bookings</NavLink>
+              <NavLink to="/admin/bookings" className={({ isActive }) => isActive ? "text-indigo-600 font-semibold border-b-2 border-indigo-600 pb-1" : "text-slate-500 font-semibold hover:text-indigo-600 transition-colors"}>Manage Bookings</NavLink>
             </nav>
 
             <div className="flex items-center gap-4">
@@ -45,6 +50,8 @@ function App() {
             <Route path="/" element={<Navigate to="/tickets" replace />} />
             <Route path="/tickets" element={<Tickets />} />
             <Route path="/tickets/:id" element={<TicketDetail />} />
+            <Route path="/bookings" element={<Bookings />} />
+            <Route path="/admin/bookings" element={<ManageBookings />} />
           </Routes>
         </main>
 
@@ -55,6 +62,7 @@ function App() {
           </div>
         </footer>
       </div>
+      </AuthProvider>
     </Router>
   );
 }

@@ -22,11 +22,14 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/tickets")
-@RequiredArgsConstructor
 @CrossOrigin(origins = "*")
 public class TicketController {
 
     private final TicketService ticketService;
+
+    public TicketController(TicketService ticketService) {
+        this.ticketService = ticketService;
+    }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Ticket> createTicket(
