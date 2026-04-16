@@ -1,5 +1,6 @@
 package com.smartcampus.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.smartcampus.dto.request.TicketCommentRequestDto;
 import com.smartcampus.dto.request.TicketRequestDto;
 import com.smartcampus.dto.request.TicketUpdateDto;
@@ -12,6 +13,9 @@ import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -19,25 +23,54 @@ import java.net.MalformedURLException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/tickets")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 public class TicketController {
-
+    private static final Logger logger = LoggerFactory.getLogger(TicketController.class);
     private final TicketService ticketService;
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<Ticket> createTicket(
-            @RequestPart("ticket") TicketRequestDto request,
-            @RequestPart(value = "attachments", required = false) List<MultipartFile> attachments) {
-        return ResponseEntity.ok(ticketService.createTicket(request, attachments));
+    public ResponseEntity<?> createTicket(
+            @RequestParam("ticket") String ticketJson,
+            @RequestParam(value = "attachments", required = false) List<MultipartFile> attachments) {
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            TicketRequestDto request = mapper.readValue(ticketJson, TicketRequestDto.class);
+            
+            if (request == null) {
+                return ResponseEntity.badRequest().body("Request body 'ticket' is missing or invalid");
+            }
+            logger.debug("Creating ticket: {} with {} attachments", request.getLocation(), attachments != null ? attachments.size() : 0);
+            return ResponseEntity.ok(ticketService.createTicket(request, attachments));
+        } catch (Exception e) {
+            logger.error("Error in createTicket controller: ", e);
+            return ResponseEntity.status(500).body("Error: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/test")
+    public ResponseEntity<String> test() {
+        return ResponseEntity.ok("Ticket API is working");
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     public ResponseEntity<List<Ticket>> getAllTickets() {
         return ResponseEntity.ok(ticketService.getAllTickets());
+    }
+
+    @GetMapping("/stats")
+    public ResponseEntity<Map<String, Long>> getStats() {
+        return ResponseEntity.ok(ticketService.getStats());
+    }
+
+    @GetMapping("/analytics")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    public ResponseEntity<Map<String, Object>> getAnalytics() {
+        return ResponseEntity.ok(ticketService.getAnalytics());
     }
 
     @GetMapping("/{id}")
@@ -51,6 +84,7 @@ public class TicketController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'TECHNICIAN')")
     public ResponseEntity<Ticket> updateTicket(
             @PathVariable String id,
             @RequestBody TicketUpdateDto request) {

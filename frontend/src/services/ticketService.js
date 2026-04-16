@@ -1,14 +1,10 @@
-import axios from 'axios';
-
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080/api';
+import api from '../utils/api';
 
 const ticketService = {
   // Create a new ticket with optional attachments
   createTicket: async (ticketData, attachments) => {
     const formData = new FormData();
-    formData.append('ticket', new Blob([JSON.stringify(ticketData)], {
-      type: 'application/json'
-    }));
+    formData.append('ticket', JSON.stringify(ticketData));
     
     if (attachments && attachments.length > 0) {
       attachments.forEach(file => {
@@ -16,7 +12,7 @@ const ticketService = {
       });
     }
 
-    const response = await axios.post(`${API_BASE_URL}/tickets`, formData, {
+    const response = await api.post(`/tickets`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
@@ -26,39 +22,57 @@ const ticketService = {
 
   // Get all tickets
   getAllTickets: async () => {
-    const response = await axios.get(`${API_BASE_URL}/tickets`);
+    const response = await api.get(`/tickets`);
+    return response.data;
+  },
+
+  // Get tickets created by the current user
+  getMyTickets: async (userId) => {
+    const response = await api.get(`/tickets/user/${userId}`);
     return response.data;
   },
 
   // Get ticket by ID
   getTicketById: async (id) => {
-    const response = await axios.get(`${API_BASE_URL}/tickets/${id}`);
+    const response = await api.get(`/tickets/${id}`);
     return response.data;
   },
 
   // Update ticket status or assignment
   updateTicket: async (id, updateData) => {
-    const response = await axios.put(`${API_BASE_URL}/tickets/${id}`, updateData);
+    const response = await api.put(`/tickets/${id}`, updateData);
     return response.data;
   },
 
   // Add a comment to a ticket
   addComment: async (ticketId, commentData) => {
-    const response = await axios.post(`${API_BASE_URL}/tickets/${ticketId}/comments`, commentData);
+    const response = await api.post(`/tickets/${ticketId}/comments`, commentData);
     return response.data;
   },
 
   // Get comments for a ticket
   getComments: async (ticketId) => {
-    const response = await axios.get(`${API_BASE_URL}/tickets/${ticketId}/comments`);
+    const response = await api.get(`/tickets/${ticketId}/comments`);
     return response.data;
   },
 
   // Delete a comment
   deleteComment: async (commentId, userId) => {
-    await axios.delete(`${API_BASE_URL}/tickets/comments/${commentId}`, {
+    await api.delete(`/tickets/comments/${commentId}`, {
       params: { userId }
     });
+  },
+
+  // Get ticket statistics
+  getStats: async () => {
+    const response = await api.get('/tickets/stats');
+    return response.data;
+  },
+
+  // Get advanced analytics
+  getAnalytics: async () => {
+    const response = await api.get('/tickets/analytics');
+    return response.data;
   }
 };
 
