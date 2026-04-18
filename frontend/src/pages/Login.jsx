@@ -4,7 +4,9 @@ import { LogIn, ShieldCheck } from 'lucide-react';
 const Login = () => {
     const handleGoogleLogin = () => {
         // Redirection to the backend's OAuth2 authorization endpoint
-        window.location.href = 'http://localhost:8081/oauth2/authorization/google';
+        const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:8081/api';
+        const oauthUrl = apiUrl.replace(/\/api$/, '') + '/oauth2/authorization/google';
+        window.location.href = oauthUrl;
     };
 
     return (
