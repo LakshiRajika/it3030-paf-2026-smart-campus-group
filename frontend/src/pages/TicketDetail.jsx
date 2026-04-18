@@ -139,11 +139,11 @@ const TicketDetail = () => {
                   {ticket.attachments.map((file, idx) => (
                     <div 
                       key={idx} 
-                      onClick={() => window.open(`http://localhost:8080/api/tickets/uploads/${file}`, '_blank')}
+                      onClick={() => window.open(`${(process.env.REACT_APP_API_URL || 'http://localhost:8081/api')}/tickets/uploads/${file}`, '_blank')}
                       className="w-32 h-32 rounded-2xl bg-slate-50 border border-slate-100 overflow-hidden hover:border-indigo-400 transition-all cursor-zoom-in group shadow-sm hover:shadow-md"
                     >
                       <img 
-                        src={`http://localhost:8080/api/tickets/uploads/${file}`} 
+                        src={`${(process.env.REACT_APP_API_URL || 'http://localhost:8081/api')}/tickets/uploads/${file}`} 
                         alt="Attachment" 
                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                         onError={(e) => {
