@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
     Search, RefreshCw, CheckCircle, XCircle, Clock3,
-    Ban, BookOpen, Loader, Filter, Users, Building2
+    Ban, BookOpen, Loader, Building2
 } from 'lucide-react';
 import BookingCard from '../../components/booking/BookingCard';
 import BookingDetail from '../../components/booking/BookingDetail';

@@ -43,7 +43,7 @@ const BookingForm = ({ onClose, onSuccess }) => {
             }
         }, 600);
         return () => clearTimeout(timer);
-    }, [form.resourceId, form.date, form.startTime, form.endTime]);
+    }, [form]);
 
     const validate = () => {
         const e = {};

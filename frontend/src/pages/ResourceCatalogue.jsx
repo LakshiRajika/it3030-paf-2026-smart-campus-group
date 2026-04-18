@@ -6,7 +6,6 @@ import DeleteConfirmModal from "../components/DeleteConfirmModal";
 import SearchFilter from "../components/SearchFilter";
 
 export default function ResourceCatalogue() {
-  const [resources, setResources] = useState([]);
   const [filtered, setFiltered] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -26,7 +25,6 @@ export default function ResourceCatalogue() {
       setError(null);
       setLoading(true);
       const data = await resourceService.getAll();
-      setResources(data || []);
       setFiltered(data || []);
     } catch (e) {
       setError(e?.response?.data?.error || "Failed to load resources.");

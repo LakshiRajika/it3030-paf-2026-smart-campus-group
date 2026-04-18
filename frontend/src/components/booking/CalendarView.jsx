@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronLeft, ChevronRight, Clock, CheckCircle, XCircle, Clock3, Ban } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Clock } from 'lucide-react';
 
 const STATUS_DOT = {
     PENDING: 'bg-amber-400',

@@ -55,7 +55,7 @@ const Login = () => {
                 <div className="mt-10 text-center">
                     <p className="text-slate-500 text-sm">
                         By signing in, you agree to our <br />
-                        <a href="#" className="text-blue-400 hover:underline">Terms of Service</a> and <a href="#" className="text-blue-400 hover:underline">Privacy Policy</a>
+                        <a href="#!" className="text-blue-400 hover:underline">Terms of Service</a> and <a href="#!" className="text-blue-400 hover:underline">Privacy Policy</a>
                     </p>
                 </div>
             </div>
