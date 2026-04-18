@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, NavLink } from 'react-router-dom';
 import Tickets from './pages/Tickets';
 import TicketDetail from './pages/TicketDetail';
 import Dashboard from './pages/Dashboard';
@@ -36,12 +36,12 @@ const Layout = ({ children }) => {
           </div>
 
           <nav className="hidden md:flex items-center gap-8">
-            <button onClick={() => window.location.href = '/dashboard'} className="text-slate-500 font-semibold hover:text-indigo-600 transition-colors">Dashboard</button>
-            <button onClick={() => window.location.href = '/tickets'} className="text-slate-500 font-semibold hover:text-indigo-600 transition-colors">Tickets</button>
-            <button onClick={() => window.location.href = '/facilities'} className="text-slate-500 font-semibold hover:text-indigo-600 transition-colors">Facilities</button>
-            <button onClick={() => window.location.href = '/bookings'} className="text-slate-500 font-semibold hover:text-indigo-600 transition-colors">Bookings</button>
+            <NavLink to="/dashboard" className={({ isActive }) => `font-semibold transition-all ${isActive ? 'text-indigo-600 border-b-2 border-indigo-600 pb-1' : 'text-slate-500 hover:text-indigo-600'}`}>Dashboard</NavLink>
+            <NavLink to="/tickets" className={({ isActive }) => `font-semibold transition-all ${isActive ? 'text-indigo-600 border-b-2 border-indigo-600 pb-1' : 'text-slate-500 hover:text-indigo-600'}`}>Tickets</NavLink>
+            <NavLink to="/facilities" className={({ isActive }) => `font-semibold transition-all ${isActive ? 'text-indigo-600 border-b-2 border-indigo-600 pb-1' : 'text-slate-500 hover:text-indigo-600'}`}>Facilities</NavLink>
+            <NavLink to="/bookings" className={({ isActive }) => `font-semibold transition-all ${isActive ? 'text-indigo-600 border-b-2 border-indigo-600 pb-1' : 'text-slate-500 hover:text-indigo-600'}`}>Bookings</NavLink>
             {user && (user.roles?.includes('ROLE_ADMIN') || user.roles?.includes('ADMIN')) && (
-              <button onClick={() => window.location.href = '/admin/bookings'} className="text-slate-500 font-semibold hover:text-indigo-600 transition-colors">Manage Bookings</button>
+              <NavLink to="/admin/bookings" className={({ isActive }) => `font-semibold transition-all ${isActive ? 'text-indigo-600 border-b-2 border-indigo-600 pb-1' : 'text-slate-500 hover:text-indigo-600'}`}>Manage Bookings</NavLink>
             )}
           </nav>
 
