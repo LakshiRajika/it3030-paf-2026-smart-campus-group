@@ -29,7 +29,6 @@ public class Ticket {
     private String assignedToId;
     private String resolutionNotes;
     
-    @Builder.Default
     private List<String> attachments = new ArrayList<>();
     
     private LocalDateTime createdAt;
