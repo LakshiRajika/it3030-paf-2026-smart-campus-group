@@ -7,7 +7,6 @@ import com.smartcampus.dto.request.TicketUpdateDto;
 import com.smartcampus.model.Ticket;
 import com.smartcampus.model.TicketComment;
 import com.smartcampus.service.TicketService;
-import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpHeaders;
@@ -27,10 +26,14 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/tickets")
-@RequiredArgsConstructor
+@CrossOrigin(origins = "*")
 public class TicketController {
     private static final Logger logger = LoggerFactory.getLogger(TicketController.class);
     private final TicketService ticketService;
+
+    public TicketController(TicketService ticketService) {
+        this.ticketService = ticketService;
+    }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> createTicket(
@@ -39,7 +42,6 @@ public class TicketController {
         try {
             ObjectMapper mapper = new ObjectMapper();
             TicketRequestDto request = mapper.readValue(ticketJson, TicketRequestDto.class);
-            
             if (request == null) {
                 return ResponseEntity.badRequest().body("Request body 'ticket' is missing or invalid");
             }
@@ -102,7 +104,6 @@ public class TicketController {
         try {
             Path file = Paths.get("uploads/").resolve(filename);
             Resource resource = new UrlResource(file.toUri());
-
             if (resource.exists() || resource.isReadable()) {
                 return ResponseEntity.ok()
                         .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + resource.getFilename() + "\"")

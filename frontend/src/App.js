@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, NavLink } from 'react-router-dom';
 import Tickets from './pages/Tickets';
 import TicketDetail from './pages/TicketDetail';
 import Dashboard from './pages/Dashboard';
@@ -9,6 +9,8 @@ import Analytics from './pages/Analytics';
 import OAuth2RedirectHandler from './pages/OAuth2RedirectHandler';
 import ResourceCatalogue from './pages/ResourceCatalogue';
 import ProtectedRoute from './components/Common/ProtectedRoute';
+import Bookings from './pages/Bookings';
+import ManageBookings from './pages/admin/ManageBookings';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import './index.css';
 
@@ -21,7 +23,7 @@ const Layout = ({ children }) => {
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
-      {/* Simple Header */}
+      {/* Header */}
       <header className="bg-white border-b border-slate-200 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -32,33 +34,36 @@ const Layout = ({ children }) => {
             </div>
             <span className="font-black text-xl text-slate-900 tracking-tight uppercase">SmartCampus</span>
           </div>
-          
+
           <nav className="hidden md:flex items-center gap-8">
-            <button onClick={() => window.location.href='/dashboard'} className="text-slate-500 font-semibold hover:text-indigo-600 transition-colors">Dashboard</button>
-            <button onClick={() => window.location.href='/tickets'} className="text-indigo-600 font-semibold border-b-2 border-indigo-600 pb-1">Tickets</button>
-            <button onClick={() => window.location.href='/facilities'} className="text-slate-500 font-semibold hover:text-indigo-600 transition-colors">Facilities</button>
-            <button onClick={() => window.location.href='/bookings'} className="text-slate-500 font-semibold hover:text-indigo-600 transition-colors">Bookings</button>
+            <NavLink to="/dashboard" className={({ isActive }) => `font-semibold transition-all ${isActive ? 'text-indigo-600 border-b-2 border-indigo-600 pb-1' : 'text-slate-500 hover:text-indigo-600'}`}>Dashboard</NavLink>
+            <NavLink to="/tickets" className={({ isActive }) => `font-semibold transition-all ${isActive ? 'text-indigo-600 border-b-2 border-indigo-600 pb-1' : 'text-slate-500 hover:text-indigo-600'}`}>Tickets</NavLink>
+            <NavLink to="/facilities" className={({ isActive }) => `font-semibold transition-all ${isActive ? 'text-indigo-600 border-b-2 border-indigo-600 pb-1' : 'text-slate-500 hover:text-indigo-600'}`}>Facilities</NavLink>
+            <NavLink to="/bookings" className={({ isActive }) => `font-semibold transition-all ${isActive ? 'text-indigo-600 border-b-2 border-indigo-600 pb-1' : 'text-slate-500 hover:text-indigo-600'}`}>Bookings</NavLink>
+            {user && (user.roles?.includes('ROLE_ADMIN') || user.roles?.includes('ADMIN')) && (
+              <NavLink to="/admin/bookings" className={({ isActive }) => `font-semibold transition-all ${isActive ? 'text-indigo-600 border-b-2 border-indigo-600 pb-1' : 'text-slate-500 hover:text-indigo-600'}`}>Manage Bookings</NavLink>
+            )}
           </nav>
 
           <div className="flex items-center gap-4">
-             {user ? (
-               <div className="flex items-center gap-3">
-                 <div className="text-right hidden sm:block">
-                    <p className="text-xs font-bold text-slate-800">{user.email.split('@')[0]}</p>
-                    <button 
-                      onClick={logout}
-                      className="text-[10px] text-indigo-600 hover:text-indigo-800 font-bold uppercase tracking-wider transition-all"
-                    >
-                      Logout Session
-                    </button>
-                 </div>
-                 <div className="w-10 h-10 rounded-full bg-slate-200 border-2 border-white shadow-sm overflow-hidden cursor-pointer hover:opacity-80 transition-opacity" onClick={logout}>
-                    <img src={`https://ui-avatars.com/api/?name=${user.email}&background=6366f1&color=fff`} alt="User" />
-                 </div>
-               </div>
-             ) : (
-               <button onClick={() => window.location.href='/login'} className="text-sm font-bold text-indigo-600">Login</button>
-             )}
+            {user ? (
+              <div className="flex items-center gap-3">
+                <div className="text-right hidden sm:block">
+                  <p className="text-xs font-bold text-slate-800">{user.email?.split('@')[0]}</p>
+                  <button
+                    onClick={logout}
+                    className="text-[10px] text-indigo-600 hover:text-indigo-800 font-bold uppercase tracking-wider transition-all"
+                  >
+                    Logout Session
+                  </button>
+                </div>
+                <div className="w-10 h-10 rounded-full bg-slate-200 border-2 border-white shadow-sm overflow-hidden cursor-pointer hover:opacity-80 transition-opacity" onClick={logout}>
+                  <img src={`https://ui-avatars.com/api/?name=${user.email}&background=6366f1&color=fff`} alt="User" />
+                </div>
+              </div>
+            ) : (
+              <button onClick={() => window.location.href = '/login'} className="text-sm font-bold text-indigo-600">Login</button>
+            )}
           </div>
         </div>
       </header>
@@ -68,7 +73,7 @@ const Layout = ({ children }) => {
         {children}
       </main>
 
-      {/* Simple Footer */}
+      {/* Footer */}
       <footer className="bg-white border-t border-slate-200 py-8">
         <div className="max-w-7xl mx-auto px-4 text-center">
           <p className="text-slate-400 text-sm">© 2024 Smart Campus Operations Hub. All rights reserved.</p>
@@ -94,19 +99,31 @@ function App() {
                 <Dashboard />
               </ProtectedRoute>
             } />
-            
+
             <Route path="/tickets" element={
               <ProtectedRoute>
                 <Tickets />
               </ProtectedRoute>
             } />
-            
+
             <Route path="/tickets/:id" element={
               <ProtectedRoute>
                 <TicketDetail />
               </ProtectedRoute>
             } />
-            
+
+            <Route path="/bookings" element={
+              <ProtectedRoute>
+                <Bookings />
+              </ProtectedRoute>
+            } />
+
+            <Route path="/admin/bookings" element={
+              <ProtectedRoute roles={['ADMIN']}>
+                <ManageBookings />
+              </ProtectedRoute>
+            } />
+
             <Route path="/admin/analytics" element={
               <ProtectedRoute roles={['ADMIN', 'MANAGER']}>
                 <Analytics />

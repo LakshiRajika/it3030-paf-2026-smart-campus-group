@@ -2,9 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import ticketService from '../services/ticketService';
 import { StatusBadge } from '../components/ticket/TicketForm';
-import CommentSection from '../components/ticket/CommentSection';
-import StatusTimeline from '../components/ticket/StatusTimeline';
 import { useAuth } from '../context/AuthContext';
+import { useCallback } from 'react';
 
 const TicketDetail = () => {
   const { id } = useParams();
@@ -18,11 +17,7 @@ const TicketDetail = () => {
 
   const { user, hasRole } = useAuth();
 
-  useEffect(() => {
-    fetchTicketDetails();
-  }, [id]);
-
-  const fetchTicketDetails = async () => {
+  const fetchTicketDetails = useCallback(async () => {
     try {
       setLoading(true);
       const [ticketData, commentsData] = await Promise.all([
@@ -37,7 +32,11 @@ const TicketDetail = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
+
+  useEffect(() => {
+    fetchTicketDetails();
+  }, [fetchTicketDetails]);
 
   const handleStatusUpdate = async (newStatus) => {
     if (!hasRole('TECHNICIAN') && !hasRole('MANAGER') && !hasRole('ADMIN')) {
