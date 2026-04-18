@@ -6,7 +6,6 @@ import {
   Calendar, 
   Settings, 
   Users, 
-  ChevronRight,
   ShieldCheck
 } from 'lucide-react';
 import { Link } from 'react-router-dom';

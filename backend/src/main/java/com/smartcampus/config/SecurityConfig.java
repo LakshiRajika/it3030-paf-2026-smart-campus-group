@@ -51,11 +51,11 @@ public class SecurityConfig {
     }
 
     private org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestResolver authorizationRequestResolver() {
-        org.springframework.security.oauth2.client.web.DefaultOAuth2AuthorizationRequestResolver authorizationRequestResolver =
+        org.springframework.security.oauth2.client.web.DefaultOAuth2AuthorizationRequestResolver resolver =
                 new org.springframework.security.oauth2.client.web.DefaultOAuth2AuthorizationRequestResolver(
                         this.clientRegistrationRepository, "/oauth2/authorization");
-        authorizationRequestResolver.setAuthorizationRequestCustomizer(
+        resolver.setAuthorizationRequestCustomizer(
                 customizer -> customizer.additionalParameters(params -> params.put("prompt", "select_account")));
-        return authorizationRequestResolver;
+        return resolver;
     }
 }

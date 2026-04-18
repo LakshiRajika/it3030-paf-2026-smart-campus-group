@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import ticketService from '../services/ticketService';
 import { TicketForm, StatusBadge } from '../components/ticket/TicketForm';
@@ -15,22 +15,16 @@ import {
 } from 'lucide-react';
 
 const Tickets = () => {
-  const navigate = useNavigate();
+  const goToTicketDetail = useNavigate();
   const [tickets, setTickets] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState(null);
   const [stats, setStats] = useState({ active: 0, resolved: 0, total: 0 });
 
   const { user } = useAuth();
 
-  useEffect(() => {
-    fetchTickets();
-    fetchStats();
-  }, []);
-
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
     try {
       const data = await ticketService.getStats();
       setStats({
@@ -41,9 +35,10 @@ const Tickets = () => {
     } catch (err) {
       console.error("Error fetching stats:", err);
     }
-  };
+  }, []);
 
-  const fetchTickets = async () => {
+
+  const fetchTickets = useCallback(async () => {
     if (!user) return;
     try {
       setLoading(true);
@@ -56,11 +51,16 @@ const Tickets = () => {
       setTickets(data);
     } catch (err) {
       console.error(err);
-      setError('Failed to load tickets. Please try again.');
+      alert('Failed to load tickets. Please try again.');
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
+
+  useEffect(() => {
+    fetchTickets();
+    fetchStats();
+  }, [fetchTickets, fetchStats]);
 
   const handleCreateTicket = async (formData, files) => {
     if (!user) {
@@ -218,7 +218,7 @@ const Tickets = () => {
                        <span className="text-[10px] font-bold uppercase">{new Date(ticket.createdAt).toLocaleDateString()}</span>
                     </div>
                     <button 
-                      onClick={() => navigate(`/tickets/${ticket.id}`)}
+                      onClick={() => goToTicketDetail(`/tickets/${ticket.id}`)}
                       className="text-indigo-600 text-sm font-bold group-hover:translate-x-1 transition-transform flex items-center gap-1"
                     >
                       View Details
