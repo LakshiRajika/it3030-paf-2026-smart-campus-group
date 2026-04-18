@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 
 const Tickets = () => {
-  const navigate = useNavigate();
+  const goToTicketDetail = useNavigate();
   const [tickets, setTickets] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -218,7 +218,7 @@ const Tickets = () => {
                        <span className="text-[10px] font-bold uppercase">{new Date(ticket.createdAt).toLocaleDateString()}</span>
                     </div>
                     <button 
-                      onClick={() => navigate(`/tickets/${ticket.id}`)}
+                      onClick={() => goToTicketDetail(`/tickets/${ticket.id}`)}
                       className="text-indigo-600 text-sm font-bold group-hover:translate-x-1 transition-transform flex items-center gap-1"
                     >
                       View Details
