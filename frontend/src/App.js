@@ -7,6 +7,7 @@ import Login from './pages/Login';
 import Unauthorized from './pages/Unauthorized';
 import Analytics from './pages/Analytics';
 import OAuth2RedirectHandler from './pages/OAuth2RedirectHandler';
+import ResourceCatalogue from './pages/ResourceCatalogue';
 import ProtectedRoute from './components/Common/ProtectedRoute';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import './index.css';
@@ -109,6 +110,12 @@ function App() {
             <Route path="/admin/analytics" element={
               <ProtectedRoute roles={['ADMIN', 'MANAGER']}>
                 <Analytics />
+              </ProtectedRoute>
+            } />
+
+            <Route path="/facilities" element={
+              <ProtectedRoute>
+                <ResourceCatalogue />
               </ProtectedRoute>
             } />
           </Routes>
