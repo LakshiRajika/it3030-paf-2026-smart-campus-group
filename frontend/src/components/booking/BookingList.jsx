@@ -86,7 +86,7 @@ const BookingList = ({ bookings = [], isAdmin, onViewDetail, onCancel }) => {
                 <table className="w-full min-w-[700px]">
                     <thead className="bg-slate-50 border-b border-slate-100">
                         <tr>
-                            <ThCell field="facilityName">Facility</ThCell>
+                            <ThCell field="resourceName">Resource</ThCell>
                             {isAdmin && <ThCell field="userName">Requested By</ThCell>}
                             <ThCell field="date">Date</ThCell>
                             <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">
@@ -107,10 +107,10 @@ const BookingList = ({ bookings = [], isAdmin, onViewDetail, onCancel }) => {
 
                             return (
                                 <tr key={booking.id} className="hover:bg-slate-50/50 transition-colors group">
-                                    {/* Facility */}
+                                    {/* Resource */}
                                     <td className="px-4 py-3">
-                                        <p className="text-sm font-semibold text-slate-800">{booking.facilityName}</p>
-                                        <p className="text-xs text-slate-400">{booking.facilityLocation}</p>
+                                        <p className="text-sm font-semibold text-slate-800">{booking.resourceName}</p>
+                                        <p className="text-xs text-slate-400">{booking.resourceLocation}</p>
                                     </td>
 
                                     {/* Requested by (admin) */}

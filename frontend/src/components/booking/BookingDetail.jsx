@@ -90,14 +90,14 @@ const BookingDetail = ({ booking, isAdmin, onClose, onUpdated }) => {
                         </div>
                     )}
 
-                    {/* Facility info */}
+                    {/* Resource info */}
                     <div className="p-4 bg-indigo-50 rounded-xl border border-indigo-100">
-                        <p className="text-xs font-semibold text-indigo-400 uppercase tracking-wider mb-1">Facility</p>
-                        <p className="font-bold text-indigo-900 text-base">{booking.facilityName}</p>
-                        <p className="text-sm text-indigo-600">{booking.facilityType}</p>
+                        <p className="text-xs font-semibold text-indigo-400 uppercase tracking-wider mb-1">Resource</p>
+                        <p className="font-bold text-indigo-900 text-base">{booking.resourceName}</p>
+                        <p className="text-sm text-indigo-600">{booking.resourceType}</p>
                         <div className="flex items-center gap-1.5 mt-1 text-sm text-indigo-500">
                             <MapPin size={12} />
-                            {booking.facilityLocation}
+                            {booking.resourceLocation}
                         </div>
                     </div>
 

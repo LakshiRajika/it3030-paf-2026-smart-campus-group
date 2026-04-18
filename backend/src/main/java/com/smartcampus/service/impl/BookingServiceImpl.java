@@ -8,12 +8,12 @@ import com.smartcampus.exception.ResourceNotFoundException;
 import com.smartcampus.exception.UnauthorizedException;
 import com.smartcampus.exception.ValidationException;
 import com.smartcampus.model.Booking;
-import com.smartcampus.model.Facility;
+import com.smartcampus.model.Resource;
 import com.smartcampus.model.User;
 import com.smartcampus.model.enums.BookingStatus;
-import com.smartcampus.model.enums.FacilityStatus;
+import com.smartcampus.model.enums.ResourceStatus;
 import com.smartcampus.repository.BookingRepository;
-import com.smartcampus.repository.FacilityRepository;
+import com.smartcampus.repository.ResourceRepository;
 import com.smartcampus.repository.UserRepository;
 import com.smartcampus.service.BookingService;
 import com.smartcampus.service.NotificationService;
@@ -32,7 +32,7 @@ public class BookingServiceImpl implements BookingService {
     private BookingRepository bookingRepository;
 
     @Autowired
-    private FacilityRepository facilityRepository;
+    private ResourceRepository resourceRepository;
 
     @Autowired
     private UserRepository userRepository;
@@ -58,32 +58,32 @@ public class BookingServiceImpl implements BookingService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
 
-        // 4. Fetch facility and validate it's ACTIVE
-        Facility facility = facilityRepository.findById(request.getFacilityId())
-                .orElseThrow(() -> new ResourceNotFoundException("Facility not found with id: " + request.getFacilityId()));
+        // 4. Fetch resource and validate it's ACTIVE
+        Resource resource = resourceRepository.findById(request.getResourceId())
+                .orElseThrow(() -> new ResourceNotFoundException("Resource not found with id: " + request.getResourceId()));
 
-        if (facility.getStatus() != FacilityStatus.ACTIVE) {
-            throw new ValidationException("Facility is not available for booking (status: " + facility.getStatus() + ")");
+        if (resource.getStatus() != ResourceStatus.ACTIVE) {
+            throw new ValidationException("Resource is not available for booking (status: " + resource.getStatus() + ")");
         }
 
         // 5. Validate attendees vs capacity
-        if (request.getExpectedAttendees() != null && facility.getCapacity() != null) {
-            if (request.getExpectedAttendees() > facility.getCapacity()) {
+        if (request.getExpectedAttendees() != null && resource.getCapacity() != null) {
+            if (request.getExpectedAttendees() > resource.getCapacity()) {
                 throw new ValidationException("Expected attendees (" + request.getExpectedAttendees() +
-                        ") exceeds facility capacity (" + facility.getCapacity() + ")");
+                        ") exceeds resource capacity (" + resource.getCapacity() + ")");
             }
         }
 
         // 6. Check for scheduling conflicts
-        if (hasConflict(request.getFacilityId(), request.getDate(),
+        if (hasConflict(request.getResourceId(), request.getDate(),
                 request.getStartTime(), request.getEndTime(), null)) {
-            throw new ConflictException("The requested time slot conflicts with an existing booking for this facility");
+            throw new ConflictException("The requested time slot conflicts with an existing booking for this resource");
         }
 
         // 7. Create booking
         Booking booking = new Booking();
         booking.setUser(user);
-        booking.setFacility(facility);
+        booking.setResource(resource);
         booking.setDate(request.getDate());
         booking.setStartTime(request.getStartTime());
         booking.setEndTime(request.getEndTime());
@@ -173,8 +173,8 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public List<BookingResponse> getAllBookingsByFacility(String facilityId) {
-        return bookingRepository.findByFacilityId(facilityId)
+    public List<BookingResponse> getAllBookingsByResource(String resourceId) {
+        return bookingRepository.findByResourceId(resourceId)
                 .stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
@@ -194,7 +194,7 @@ public class BookingServiceImpl implements BookingService {
 
         // If approving, re-check conflict (another booking may have been approved in between)
         if (newStatus == BookingStatus.APPROVED) {
-            if (hasConflict(booking.getFacility().getId(), booking.getDate(),
+            if (hasConflict(booking.getResource().getId(), booking.getDate(),
                     booking.getStartTime(), booking.getEndTime(), bookingId)) {
                 throw new ConflictException("Cannot approve: a conflicting booking already exists for this time slot");
             }
@@ -220,16 +220,16 @@ public class BookingServiceImpl implements BookingService {
     // ─── Conflict Detection ──────────────────────────────────────────────────────
 
     @Override
-    public boolean hasConflict(String facilityId, LocalDate date,
+    public boolean hasConflict(String resourceId, LocalDate date,
                                 LocalTime startTime, LocalTime endTime,
                                 String excludeBookingId) {
         List<Booking> conflicts;
         if (excludeBookingId != null) {
             conflicts = bookingRepository.findConflictingBookingsExcluding(
-                    facilityId, date, startTime, endTime, excludeBookingId);
+                    resourceId, date, startTime, endTime, excludeBookingId);
         } else {
             conflicts = bookingRepository.findConflictingBookings(
-                    facilityId, date, startTime, endTime);
+                    resourceId, date, startTime, endTime);
         }
         return !conflicts.isEmpty();
     }
@@ -272,12 +272,12 @@ public class BookingServiceImpl implements BookingService {
             res.setUserEmail(booking.getUser().getEmail());
         }
 
-        if (booking.getFacility() != null) {
-            res.setFacilityId(booking.getFacility().getId());
-            res.setFacilityName(booking.getFacility().getName());
-            res.setFacilityType(booking.getFacility().getType() != null
-                    ? booking.getFacility().getType().name() : null);
-            res.setFacilityLocation(booking.getFacility().getLocation());
+        if (booking.getResource() != null) {
+            res.setResourceId(booking.getResource().getId());
+            res.setResourceName(booking.getResource().getName());
+            res.setResourceType(booking.getResource().getType() != null
+                    ? booking.getResource().getType().name() : null);
+            res.setResourceLocation(booking.getResource().getLocation());
         }
 
         return res;

@@ -19,11 +19,11 @@ public interface BookingService {
     // Admin operations
     List<BookingResponse> getAllBookings();
     List<BookingResponse> getAllBookingsByStatus(BookingStatus status);
-    List<BookingResponse> getAllBookingsByFacility(String facilityId);
+    List<BookingResponse> getAllBookingsByResource(String resourceId);
     BookingResponse updateBookingStatus(String bookingId, BookingStatusUpdateRequest request, String adminId);
 
     // Conflict check (also used internally)
-    boolean hasConflict(String facilityId, java.time.LocalDate date,
+    boolean hasConflict(String resourceId, java.time.LocalDate date,
                         java.time.LocalTime startTime, java.time.LocalTime endTime,
                         String excludeBookingId);
 }

@@ -4,6 +4,7 @@ import ticketService from '../services/ticketService';
 import { StatusBadge } from '../components/ticket/TicketForm';
 import CommentSection from '../components/ticket/CommentSection';
 import StatusTimeline from '../components/ticket/StatusTimeline';
+import { useAuth } from '../context/AuthContext';
 
 const TicketDetail = () => {
   const { id } = useParams();
@@ -14,6 +15,8 @@ const TicketDetail = () => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [statusUpdating, setStatusUpdating] = useState(false);
+
+  const { user, hasRole } = useAuth();
 
   useEffect(() => {
     fetchTicketDetails();
@@ -30,13 +33,18 @@ const TicketDetail = () => {
       setComments(commentsData);
     } catch (err) {
       console.error(err);
-      alert('Error fetching ticket details');
+      alert('Error fetching ticket details: ' + (err.response?.data?.message || err.message));
     } finally {
       setLoading(false);
     }
   };
 
   const handleStatusUpdate = async (newStatus) => {
+    if (!hasRole('TECHNICIAN') && !hasRole('MANAGER') && !hasRole('ADMIN')) {
+      alert('You do not have permission to update ticket status.');
+      return;
+    }
+
     try {
       setStatusUpdating(true);
       const updateData = { status: newStatus };
@@ -48,7 +56,7 @@ const TicketDetail = () => {
       await ticketService.updateTicket(id, updateData);
       fetchTicketDetails();
     } catch (err) {
-      alert('Error updating status');
+      alert('Error updating status: ' + (err.response?.data?.message || err.message));
     } finally {
       setStatusUpdating(false);
     }
@@ -57,17 +65,22 @@ const TicketDetail = () => {
   const handleAddComment = async (e) => {
     e.preventDefault();
     if (!newComment.trim()) return;
+    if (!user) {
+      alert('You must be logged in to comment.');
+      return;
+    }
+
     try {
       setSubmitting(true);
       await ticketService.addComment(id, {
         content: newComment,
-        authorId: 'USER123', // Demo ID
-        authorName: 'Campus User'
+        authorId: user.sub,
+        authorName: user.email.split('@')[0]
       });
       setNewComment('');
       fetchTicketDetails();
     } catch (err) {
-      alert('Error adding comment');
+      alert('Error adding comment: ' + (err.response?.data?.message || err.message));
     } finally {
       setSubmitting(false);
     }

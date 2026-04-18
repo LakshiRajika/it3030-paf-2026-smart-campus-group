@@ -112,7 +112,7 @@ public class BookingController {
     @GetMapping("/check-conflict")
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     public ResponseEntity<Map<String, Object>> checkConflict(
-            @RequestParam String facilityId,
+            @RequestParam String resourceId,
             @RequestParam String date,
             @RequestParam String startTime,
             @RequestParam String endTime) {
@@ -121,12 +121,12 @@ public class BookingController {
         java.time.LocalTime start = java.time.LocalTime.parse(startTime);
         java.time.LocalTime end = java.time.LocalTime.parse(endTime);
 
-        boolean conflict = bookingService.hasConflict(facilityId, localDate, start, end, null);
+        boolean conflict = bookingService.hasConflict(resourceId, localDate, start, end, null);
 
         return ResponseEntity.ok(Map.of(
                 "hasConflict", conflict,
                 "available", !conflict,
-                "facilityId", facilityId,
+                "resourceId", resourceId,
                 "date", date,
                 "startTime", startTime,
                 "endTime", endTime
@@ -138,20 +138,20 @@ public class BookingController {
     /**
      * GET /api/bookings
      * Get all bookings in the system (Admin only).
-     * Optional filters: ?status=PENDING, ?facilityId=xxx
+     * Optional filters: ?status=PENDING, ?resourceId=xxx
      */
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<BookingResponse>> getAllBookings(
             @RequestParam(required = false) BookingStatus status,
-            @RequestParam(required = false) String facilityId) {
+            @RequestParam(required = false) String resourceId) {
 
         List<BookingResponse> bookings;
 
         if (status != null) {
             bookings = bookingService.getAllBookingsByStatus(status);
-        } else if (facilityId != null) {
-            bookings = bookingService.getAllBookingsByFacility(facilityId);
+        } else if (resourceId != null) {
+            bookings = bookingService.getAllBookingsByResource(resourceId);
         } else {
             bookings = bookingService.getAllBookings();
         }

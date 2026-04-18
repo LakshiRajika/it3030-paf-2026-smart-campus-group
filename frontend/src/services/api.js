@@ -1,13 +1,15 @@
 import axios from 'axios';
 
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8081/api';
+
 const api = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || 'http://localhost:8081/api',
+  baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// Mock interceptor for auth token (can be implemented properly later)
+// Attach JWT token to every request
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
   if (token) {
@@ -15,5 +17,17 @@ api.interceptors.request.use((config) => {
   }
   return config;
 });
+
+// Handle 401 responses globally
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem('token');
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
 
 export default api;

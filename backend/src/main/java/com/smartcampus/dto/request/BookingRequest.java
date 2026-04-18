@@ -6,8 +6,8 @@ import java.time.LocalTime;
 
 public class BookingRequest {
 
-    @NotBlank(message = "Facility ID is required")
-    private String facilityId;
+    @NotBlank(message = "Resource ID is required")
+    private String resourceId;
 
     @NotNull(message = "Date is required")
     @Future(message = "Booking date must be in the future")
@@ -28,8 +28,8 @@ public class BookingRequest {
     private Integer expectedAttendees;
 
     // Getters and Setters
-    public String getFacilityId() { return facilityId; }
-    public void setFacilityId(String facilityId) { this.facilityId = facilityId; }
+    public String getResourceId() { return resourceId; }
+    public void setResourceId(String resourceId) { this.resourceId = resourceId; }
 
     public LocalDate getDate() { return date; }
     public void setDate(LocalDate date) { this.date = date; }

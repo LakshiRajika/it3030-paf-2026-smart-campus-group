@@ -165,7 +165,7 @@ const CalendarView = ({ bookings = [], onSelectDay }) => {
                                             className={`hidden sm:block mt-1 text-[10px] font-semibold px-1.5 py-0.5 rounded truncate
                         ${STATUS_TAG[b.status] || 'bg-slate-100 text-slate-500'}`}
                                         >
-                                            {b.facilityName || 'Booking'}
+                                            {b.resourceName || 'Booking'}
                                         </div>
                                     ))}
                                     {dayBookings.length > 1 && (
@@ -213,7 +213,7 @@ const CalendarView = ({ bookings = [], onSelectDay }) => {
                                     >
                                         <div className={`w-2 h-10 rounded-full shrink-0 ${STATUS_DOT[b.status]}`} />
                                         <div className="flex-1 min-w-0">
-                                            <p className="text-sm font-bold text-slate-800 truncate">{b.facilityName}</p>
+                                            <p className="text-sm font-bold text-slate-800 truncate">{b.resourceName}</p>
                                             <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
                                                 <Clock size={11} />
                                                 {formatTime(b.startTime)} – {formatTime(b.endTime)}

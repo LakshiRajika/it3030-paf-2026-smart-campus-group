@@ -40,9 +40,9 @@ const BookingCard = ({ booking, onCancel, onViewDetail, isAdmin }) => {
                 <div className="flex items-start justify-between mb-4">
                     <div className="flex-1 min-w-0">
                         <h3 className="font-bold text-slate-900 text-base truncate pr-2">
-                            {booking.facilityName || 'Unknown Facility'}
+                            {booking.resourceName || 'Unknown Resource'}
                         </h3>
-                        <p className="text-xs text-slate-400 mt-0.5">{booking.facilityType} · {booking.facilityLocation}</p>
+                        <p className="text-xs text-slate-400 mt-0.5">{booking.resourceType} · {booking.resourceLocation}</p>
                     </div>
                     <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border ${config.color} shrink-0`}>
                         <StatusIcon size={12} />

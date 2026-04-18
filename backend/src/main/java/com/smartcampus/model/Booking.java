@@ -18,7 +18,7 @@ public class Booking {
     private User user;
 
     @DBRef
-    private Facility facility;
+    private Resource resource;
 
     private LocalDate date;
     private LocalTime startTime;
@@ -47,8 +47,8 @@ public class Booking {
     public User getUser() { return user; }
     public void setUser(User user) { this.user = user; }
 
-    public Facility getFacility() { return facility; }
-    public void setFacility(Facility facility) { this.facility = facility; }
+    public Resource getResource() { return resource; }
+    public void setResource(Resource resource) { this.resource = resource; }
 
     public LocalDate getDate() { return date; }
     public void setDate(LocalDate date) { this.date = date; }

@@ -8,6 +8,10 @@ import com.smartcampus.model.Ticket;
 import com.smartcampus.model.TicketComment;
 import com.smartcampus.model.enums.TicketStatus;
 import com.smartcampus.repository.TicketCommentRepository;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.List;
+import java.util.stream.Collectors;
 import com.smartcampus.repository.TicketRepository;
 import com.smartcampus.service.TicketService;
 import lombok.RequiredArgsConstructor;
@@ -40,43 +44,49 @@ public class TicketServiceImpl implements TicketService {
 
     @Override
     public Ticket createTicket(TicketRequestDto request, List<MultipartFile> attachments) {
-        Ticket ticket = Ticket.builder()
-                .location(request.getLocation())
-                .description(request.getDescription())
-                .preferredContact(request.getPreferredContact())
-                .category(request.getCategory())
-                .priority(request.getPriority())
-                .createdById(request.getCreatedById())
-                .status(TicketStatus.OPEN)
-                .createdAt(LocalDateTime.now())
-                .updatedAt(LocalDateTime.now())
-                .attachments(new ArrayList<>())
-                .build();
+        System.out.println("Processing ticket creation for user: " + (request != null ? request.getCreatedById() : "null"));
+        try {
+            if (request == null) throw new IllegalArgumentException("Ticket request is null");
 
-        if (attachments != null && !attachments.isEmpty()) {
-            if (attachments.size() > 3) {
-                throw new IllegalArgumentException("Maximum of 3 attachments allowed.");
-            }
-            try {
+            Ticket ticket = Ticket.builder()
+                    .location(request.getLocation())
+                    .description(request.getDescription())
+                    .preferredContact(request.getPreferredContact())
+                    .category(request.getCategory())
+                    .priority(request.getPriority())
+                    .createdById(request.getCreatedById())
+                    .status(TicketStatus.OPEN)
+                    .createdAt(LocalDateTime.now())
+                    .updatedAt(LocalDateTime.now())
+                    .attachments(new ArrayList<>())
+                    .build();
+
+            if (attachments != null && !attachments.isEmpty()) {
+                System.out.println("Found " + attachments.size() + " attachments");
                 Path uploadPath = Paths.get(UPLOAD_DIR);
                 if (!Files.exists(uploadPath)) {
                     Files.createDirectories(uploadPath);
                 }
 
                 for (MultipartFile file : attachments) {
-                    if (!file.isEmpty()) {
+                    if (file != null && !file.isEmpty()) {
                         String fileName = UUID.randomUUID().toString() + "_" + StringUtils.cleanPath(file.getOriginalFilename());
                         Path filePath = uploadPath.resolve(fileName);
                         Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
                         ticket.getAttachments().add(fileName);
+                        System.out.println("Saved file: " + fileName);
                     }
                 }
-            } catch (IOException ex) {
-                throw new RuntimeException("Could not store file " + ex.getMessage());
             }
-        }
 
-        return ticketRepository.save(ticket);
+            Ticket savedTicket = ticketRepository.save(ticket);
+            System.out.println("Ticket saved successfully with ID: " + savedTicket.getId());
+            return savedTicket;
+        } catch (Exception e) {
+            System.err.println("CRITICAL ERROR in createTicket: " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("Error creating ticket: " + e.getMessage());
+        }
     }
 
     @Override
@@ -175,5 +185,51 @@ public class TicketServiceImpl implements TicketService {
         comment.setContent(content);
         comment.setUpdatedAt(LocalDateTime.now());
         return commentRepository.save(comment);
+    }
+
+    @Override
+    public Map<String, Object> getAnalytics() {
+        List<Ticket> tickets = ticketRepository.findAll();
+        Map<String, Object> analytics = new HashMap<>();
+        
+        // Status counts
+        Map<String, Long> statusCounts = tickets.stream()
+                .collect(Collectors.groupingBy(t -> t.getStatus().name(), Collectors.counting()));
+        analytics.put("statusDistribution", statusCounts);
+        
+        // Category counts
+        Map<String, Long> categoryCounts = tickets.stream()
+                .collect(Collectors.groupingBy(t -> t.getCategory().name(), Collectors.counting()));
+        analytics.put("categoryDistribution", categoryCounts);
+
+        // Priority counts
+        Map<String, Long> priorityCounts = tickets.stream()
+                .collect(Collectors.groupingBy(t -> t.getPriority().name(), Collectors.counting()));
+        analytics.put("priorityDistribution", priorityCounts);
+        
+        // SLA Performance (Average resolution time in hours for resolved tickets)
+        double avgResTime = tickets.stream()
+                .filter(t -> t.getResolvedAt() != null && t.getCreatedAt() != null)
+                .mapToLong(t -> java.time.Duration.between(t.getCreatedAt(), t.getResolvedAt()).toHours())
+                .average()
+                .orElse(0.0);
+        analytics.put("avgResolutionTimeHours", avgResTime);
+
+        analytics.put("totalTickets", (long) tickets.size());
+        
+        return analytics;
+    }
+
+    @Override
+    public Map<String, Long> getStats() {
+        List<Ticket> tickets = ticketRepository.findAll();
+        Map<String, Long> stats = new HashMap<>();
+        
+        stats.put("total", (long) tickets.size());
+        stats.put("open", tickets.stream().filter(t -> t.getStatus() == TicketStatus.OPEN).count());
+        stats.put("inProgress", tickets.stream().filter(t -> t.getStatus() == TicketStatus.IN_PROGRESS).count());
+        stats.put("resolved", tickets.stream().filter(t -> t.getStatus() == TicketStatus.RESOLVED || t.getStatus() == TicketStatus.CLOSED).count());
+        
+        return stats;
     }
 }

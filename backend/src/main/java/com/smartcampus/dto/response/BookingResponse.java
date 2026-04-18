@@ -11,10 +11,10 @@ public class BookingResponse {
     private String userId;
     private String userName;
     private String userEmail;
-    private String facilityId;
-    private String facilityName;
-    private String facilityType;
-    private String facilityLocation;
+    private String resourceId;
+    private String resourceName;
+    private String resourceType;
+    private String resourceLocation;
     private LocalDate date;
     private LocalTime startTime;
     private LocalTime endTime;
@@ -38,17 +38,17 @@ public class BookingResponse {
     public String getUserEmail() { return userEmail; }
     public void setUserEmail(String userEmail) { this.userEmail = userEmail; }
 
-    public String getFacilityId() { return facilityId; }
-    public void setFacilityId(String facilityId) { this.facilityId = facilityId; }
+    public String getResourceId() { return resourceId; }
+    public void setResourceId(String resourceId) { this.resourceId = resourceId; }
 
-    public String getFacilityName() { return facilityName; }
-    public void setFacilityName(String facilityName) { this.facilityName = facilityName; }
+    public String getResourceName() { return resourceName; }
+    public void setResourceName(String resourceName) { this.resourceName = resourceName; }
 
-    public String getFacilityType() { return facilityType; }
-    public void setFacilityType(String facilityType) { this.facilityType = facilityType; }
+    public String getResourceType() { return resourceType; }
+    public void setResourceType(String resourceType) { this.resourceType = resourceType; }
 
-    public String getFacilityLocation() { return facilityLocation; }
-    public void setFacilityLocation(String facilityLocation) { this.facilityLocation = facilityLocation; }
+    public String getResourceLocation() { return resourceLocation; }
+    public void setResourceLocation(String resourceLocation) { this.resourceLocation = resourceLocation; }
 
     public LocalDate getDate() { return date; }
     public void setDate(LocalDate date) { this.date = date; }

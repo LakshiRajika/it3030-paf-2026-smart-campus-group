@@ -43,9 +43,9 @@ class BookingControllerIntegrationTest {
     void setUp() {
         sampleResponse = new BookingResponse();
         sampleResponse.setId("booking-1");
-        sampleResponse.setFacilityId("facility-1");
-        sampleResponse.setFacilityName("Lab 101");
-        sampleResponse.setFacilityLocation("Block A");
+        sampleResponse.setResourceId("resource-1");
+        sampleResponse.setResourceName("Lab 101");
+        sampleResponse.setResourceLocation("Block A");
         sampleResponse.setDate(LocalDate.now().plusDays(1));
         sampleResponse.setStartTime(LocalTime.of(9, 0));
         sampleResponse.setEndTime(LocalTime.of(11, 0));
@@ -63,7 +63,7 @@ class BookingControllerIntegrationTest {
     @WithMockUser(roles = "USER")
     void createBooking_Returns201_WithValidRequest() throws Exception {
         BookingRequest request = new BookingRequest();
-        request.setFacilityId("facility-1");
+        request.setResourceId("resource-1");
         request.setDate(LocalDate.now().plusDays(1));
         request.setStartTime(LocalTime.of(9, 0));
         request.setEndTime(LocalTime.of(11, 0));
@@ -79,14 +79,14 @@ class BookingControllerIntegrationTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").value("booking-1"))
                 .andExpect(jsonPath("$.status").value("PENDING"))
-                .andExpect(jsonPath("$.facilityName").value("Lab 101"));
+                .andExpect(jsonPath("$.resourceName").value("Lab 101"));
     }
 
     @Test
     @WithMockUser(roles = "USER")
     void createBooking_Returns400_WhenPurposeTooShort() throws Exception {
         BookingRequest request = new BookingRequest();
-        request.setFacilityId("facility-1");
+        request.setResourceId("resource-1");
         request.setDate(LocalDate.now().plusDays(1));
         request.setStartTime(LocalTime.of(9, 0));
         request.setEndTime(LocalTime.of(11, 0));
@@ -102,7 +102,7 @@ class BookingControllerIntegrationTest {
     @Test
     void createBooking_Returns401_WhenUnauthenticated() throws Exception {
         BookingRequest request = new BookingRequest();
-        request.setFacilityId("facility-1");
+        request.setResourceId("resource-1");
         request.setDate(LocalDate.now().plusDays(1));
         request.setStartTime(LocalTime.of(9, 0));
         request.setEndTime(LocalTime.of(11, 0));
@@ -227,7 +227,7 @@ class BookingControllerIntegrationTest {
                 .thenReturn(false);
 
         mockMvc.perform(get("/api/bookings/check-conflict")
-                        .param("facilityId", "facility-1")
+                        .param("resourceId", "resource-1")
                         .param("date", LocalDate.now().plusDays(1).toString())
                         .param("startTime", "09:00")
                         .param("endTime", "11:00"))
@@ -243,7 +243,7 @@ class BookingControllerIntegrationTest {
                 .thenReturn(true);
 
         mockMvc.perform(get("/api/bookings/check-conflict")
-                        .param("facilityId", "facility-1")
+                        .param("resourceId", "resource-1")
                         .param("date", LocalDate.now().plusDays(1).toString())
                         .param("startTime", "09:00")
                         .param("endTime", "11:00"))

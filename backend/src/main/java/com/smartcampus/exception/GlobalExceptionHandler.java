@@ -6,8 +6,10 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.context.request.WebRequest;
 
 import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -34,8 +36,14 @@ public class GlobalExceptionHandler {
 
     // ── Resource not found (404) ─────────────────────────────────────────────────
     @ExceptionHandler(ResourceNotFoundException.class)
-    public ResponseEntity<Map<String, Object>> handleNotFound(ResourceNotFoundException ex) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorBody(404, ex.getMessage()));
+    public ResponseEntity<Map<String, Object>> handleNotFound(ResourceNotFoundException ex, WebRequest request) {
+        Map<String, Object> details = new HashMap<>();
+        details.put("timestamp", new Date());
+        details.put("message", ex.getMessage());
+        if (request != null) {
+            details.put("details", request.getDescription(false));
+        }
+        return new ResponseEntity<>(details, HttpStatus.NOT_FOUND);
     }
 
     // ── Conflict / scheduling overlap (409) ──────────────────────────────────────
@@ -58,10 +66,16 @@ public class GlobalExceptionHandler {
 
     // ── Catch-all (500) ──────────────────────────────────────────────────────────
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<Map<String, Object>> handleGeneric(Exception ex) {
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
-            errorBody(500, "An unexpected error occurred. Please try again later.")
-        );
+    public ResponseEntity<Map<String, Object>> globalExceptionHandler(Exception ex, WebRequest request) {
+        Map<String, Object> details = new HashMap<>();
+        details.put("timestamp", new Date());
+        details.put("message", "An unexpected error occurred");
+        details.put("error", ex.getClass().getSimpleName());
+        if (request != null) {
+            details.put("details", request.getDescription(false));
+        }
+        ex.printStackTrace();
+        return new ResponseEntity<>(details, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     // ── Helper ───────────────────────────────────────────────────────────────────

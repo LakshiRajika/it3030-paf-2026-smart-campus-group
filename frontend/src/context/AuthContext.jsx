@@ -1,31 +1,57 @@
-import React, { createContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import {jwtDecode} from 'jwt-decode';
 
-export const AuthContext = createContext(null);
+const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
-    // Mock user for now to unblock UI development
-    const [user, setUser] = useState({
-        id: 'mock-user-id',
-        name: 'Campus Staff',
-        email: 'staff@smartcampus.edu',
-        role: 'ADMIN' // Set to ADMIN to allow access to all features
-    });
-    const [loading, setLoading] = useState(false);
+    const [user, setUser] = useState(null);
+    const [loading, setLoading] = useState(true);
 
-    const login = async (credentials) => {
-        // Implement real login later
-        console.log('Login called with:', credentials);
-        return { success: true };
+    useEffect(() => {
+        const token = localStorage.getItem('token');
+        if (token) {
+            try {
+                const decoded = jwtDecode(token);
+                // Check if token is expired
+                if (decoded.exp * 1000 < Date.now()) {
+                    localStorage.removeItem('token');
+                    setUser(null);
+                } else {
+                    setUser(decoded);
+                }
+            } catch (error) {
+                console.error("Invalid token", error);
+                localStorage.removeItem('token');
+                setUser(null);
+            }
+        }
+        setLoading(false);
+    }, []);
+
+    const login = (token) => {
+        localStorage.setItem('token', token);
+        const decoded = jwtDecode(token);
+        setUser(decoded);
     };
 
     const logout = () => {
-        setUser(null);
         localStorage.removeItem('token');
+        setUser(null);
+    };
+
+    const hasRole = (role) => {
+        if (!user || !user.roles) return false;
+        return user.roles.some(r => {
+            const roleName = typeof r === 'string' ? r : (r.authority || r.role || JSON.stringify(r));
+            return roleName === `ROLE_${role}` || roleName === role;
+        });
     };
 
     return (
-        <AuthContext.Provider value={{ user, loading, login, logout }}>
+        <AuthContext.Provider value={{ user, loading, login, logout, hasRole }}>
             {children}
         </AuthContext.Provider>
     );
 };
+
+export const useAuth = () => useContext(AuthContext);

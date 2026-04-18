@@ -6,7 +6,7 @@ import {
 import BookingCard from '../../components/booking/BookingCard';
 import BookingDetail from '../../components/booking/BookingDetail';
 import bookingService from '../../services/bookingService';
-import facilityService from '../../services/facilityService';
+import resourceService from '../../services/resourceService';
 
 const STATUS_FILTERS = [
     { value: '', label: 'All', icon: BookOpen },
@@ -18,12 +18,12 @@ const STATUS_FILTERS = [
 
 const ManageBookings = () => {
     const [bookings, setBookings] = useState([]);
-    const [facilities, setFacilities] = useState([]);
+    const [resources, setResources] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('');
-    const [facilityFilter, setFacilityFilter] = useState('');
+    const [resourceFilter, setResourceFilter] = useState('');
     const [selectedBooking, setSelectedBooking] = useState(null);
 
     const fetchBookings = useCallback(async () => {
@@ -32,7 +32,7 @@ const ManageBookings = () => {
         try {
             const data = await bookingService.getAllBookings(
                 statusFilter || null,
-                facilityFilter || null
+                resourceFilter || null
             );
             setBookings(data);
         } catch {
@@ -40,21 +40,21 @@ const ManageBookings = () => {
         } finally {
             setLoading(false);
         }
-    }, [statusFilter, facilityFilter]);
+    }, [statusFilter, resourceFilter]);
 
     useEffect(() => {
         fetchBookings();
     }, [fetchBookings]);
 
     useEffect(() => {
-        facilityService.getAllFacilities().then(setFacilities).catch(() => { });
+        resourceService.getAll().then(setResources).catch(() => { });
     }, []);
 
     const filtered = bookings.filter(b => {
         if (!searchTerm) return true;
         const t = searchTerm.toLowerCase();
         return (
-            (b.facilityName || '').toLowerCase().includes(t) ||
+            (b.resourceName || '').toLowerCase().includes(t) ||
             (b.userName || '').toLowerCase().includes(t) ||
             (b.userEmail || '').toLowerCase().includes(t) ||
             (b.purpose || '').toLowerCase().includes(t)
@@ -79,7 +79,7 @@ const ManageBookings = () => {
                         </span>
                     )}
                 </div>
-                <p className="text-slate-500">Review, approve, or reject all facility and resource booking requests</p>
+                <p className="text-slate-500">Review, approve, or reject all resource booking requests</p>
             </div>
 
             {/* Stats */}
@@ -115,7 +115,7 @@ const ManageBookings = () => {
                         type="text"
                         value={searchTerm}
                         onChange={e => setSearchTerm(e.target.value)}
-                        placeholder="Search by user, facility, or purpose..."
+                        placeholder="Search by user, resource, or purpose..."
                         className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
                     />
                 </div>
@@ -123,12 +123,12 @@ const ManageBookings = () => {
                 <div className="relative">
                     <Building2 size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                     <select
-                        value={facilityFilter}
-                        onChange={e => setFacilityFilter(e.target.value)}
+                        value={resourceFilter}
+                        onChange={e => setResourceFilter(e.target.value)}
                         className="pl-10 pr-8 py-2.5 rounded-xl border border-slate-200 text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white appearance-none"
                     >
-                        <option value="">All Facilities</option>
-                        {facilities.map(f => (
+                        <option value="">All Resources</option>
+                        {resources.map(f => (
                             <option key={f.id} value={f.id}>{f.name}</option>
                         ))}
                     </select>

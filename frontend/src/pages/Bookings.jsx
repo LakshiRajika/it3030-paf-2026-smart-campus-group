@@ -59,9 +59,9 @@ const Bookings = () => {
         if (!searchTerm) return true;
         const t = searchTerm.toLowerCase();
         return (
-            (b.facilityName || '').toLowerCase().includes(t) ||
+            (b.resourceName || '').toLowerCase().includes(t) ||
             (b.purpose || '').toLowerCase().includes(t) ||
-            (b.facilityLocation || '').toLowerCase().includes(t) ||
+            (b.resourceLocation || '').toLowerCase().includes(t) ||
             (b.userName || '').toLowerCase().includes(t)
         );
     });
@@ -98,7 +98,7 @@ const Bookings = () => {
                     <p className="text-slate-500 mt-1">
                         {isAdmin
                             ? 'Review and manage all resource booking requests'
-                            : 'Manage your facility and resource booking requests'}
+                            : 'Manage your resource booking requests'}
                     </p>
                 </div>
                 <button
@@ -127,7 +127,7 @@ const Bookings = () => {
                         type="text"
                         value={searchTerm}
                         onChange={e => setSearchTerm(e.target.value)}
-                        placeholder="Search facility, purpose, location..."
+                        placeholder="Search resource, purpose, location..."
                         className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
                     />
                 </div>

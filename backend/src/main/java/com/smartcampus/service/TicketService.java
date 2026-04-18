@@ -8,6 +8,7 @@ import com.smartcampus.model.TicketComment;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.Map;
 
 public interface TicketService {
     Ticket createTicket(TicketRequestDto request, List<MultipartFile> attachments);
@@ -21,4 +22,7 @@ public interface TicketService {
     void deleteComment(String commentId, String userId);
     TicketComment updateComment(String commentId, String userId, String content);
     List<Ticket> getTicketsByAssignedTo(String technicianId);
+    
+    Map<String, Long> getStats();
+    Map<String, Object> getAnalytics();
 }

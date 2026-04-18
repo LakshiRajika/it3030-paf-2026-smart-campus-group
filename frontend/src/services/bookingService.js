@@ -56,10 +56,10 @@ const bookingService = {
     /**
      * Check if a time slot is available (no conflict)
      */
-    checkConflict: async (facilityId, date, startTime, endTime) => {
+    checkConflict: async (resourceId, date, startTime, endTime) => {
         const response = await axios.get(`${API_URL}/bookings/check-conflict`, {
             headers: authHeaders(),
-            params: { facilityId, date, startTime, endTime },
+            params: { resourceId, date, startTime, endTime },
         });
         return response.data;
     },
@@ -69,10 +69,10 @@ const bookingService = {
     /**
      * Get all bookings (admin)
      */
-    getAllBookings: async (status = null, facilityId = null) => {
+    getAllBookings: async (status = null, resourceId = null) => {
         const params = {};
         if (status) params.status = status;
-        if (facilityId) params.facilityId = facilityId;
+        if (resourceId) params.resourceId = resourceId;
         const response = await axios.get(`${API_URL}/bookings`, {
             headers: authHeaders(),
             params,

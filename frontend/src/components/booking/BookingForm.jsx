@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { X, Calendar, Clock, Users, FileText, AlertCircle, CheckCircle, Loader } from 'lucide-react';
 import bookingService from '../../services/bookingService';
-import facilityService from '../../services/facilityService';
+import resourceService from '../../services/resourceService';
 
 const BookingForm = ({ onClose, onSuccess }) => {
-    const [facilities, setFacilities] = useState([]);
+    const [resources, setResources] = useState([]);
     const [form, setForm] = useState({
-        facilityId: '',
+        resourceId: '',
         date: '',
         startTime: '',
         endTime: '',
@@ -19,13 +19,13 @@ const BookingForm = ({ onClose, onSuccess }) => {
     const [apiError, setApiError] = useState('');
 
     useEffect(() => {
-        facilityService.getAllFacilities().then(setFacilities).catch(() => { });
+        resourceService.getAll().then(setResources).catch(() => { });
     }, []);
 
-    // Auto-check conflict when time/facility/date fields are all filled
+    // Auto-check conflict when time/resource/date fields are all filled
     useEffect(() => {
-        const { facilityId, date, startTime, endTime } = form;
-        if (!facilityId || !date || !startTime || !endTime) {
+        const { resourceId, date, startTime, endTime } = form;
+        if (!resourceId || !date || !startTime || !endTime) {
             setConflictCheck(null);
             return;
         }
@@ -36,18 +36,18 @@ const BookingForm = ({ onClose, onSuccess }) => {
         setConflictCheck('checking');
         const timer = setTimeout(async () => {
             try {
-                const result = await bookingService.checkConflict(facilityId, date, startTime, endTime);
+                const result = await bookingService.checkConflict(resourceId, date, startTime, endTime);
                 setConflictCheck(result.hasConflict ? 'conflict' : 'available');
             } catch {
                 setConflictCheck(null);
             }
         }, 600);
         return () => clearTimeout(timer);
-    }, [form.facilityId, form.date, form.startTime, form.endTime]);
+    }, [form.resourceId, form.date, form.startTime, form.endTime]);
 
     const validate = () => {
         const e = {};
-        if (!form.facilityId) e.facilityId = 'Please select a facility';
+        if (!form.resourceId) e.resourceId = 'Please select a resource';
         if (!form.date) e.date = 'Date is required';
         else if (form.date < new Date().toISOString().split('T')[0])
             e.date = 'Date must be in the future';
@@ -79,7 +79,7 @@ const BookingForm = ({ onClose, onSuccess }) => {
         setApiError('');
         try {
             const payload = {
-                facilityId: form.facilityId,
+                resourceId: form.resourceId,
                 date: form.date,
                 startTime: form.startTime,
                 endTime: form.endTime,
@@ -96,7 +96,7 @@ const BookingForm = ({ onClose, onSuccess }) => {
         }
     };
 
-    const selectedFacility = facilities.find(f => f.id === form.facilityId);
+    const selectedResource = resources.find(r => r.id === form.resourceId);
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
@@ -121,29 +121,29 @@ const BookingForm = ({ onClose, onSuccess }) => {
                         </div>
                     )}
 
-                    {/* Facility Select */}
+                    {/* Resource Select */}
                     <div>
                         <label className="block text-sm font-semibold text-slate-700 mb-1.5">
                             Facility / Resource <span className="text-red-500">*</span>
                         </label>
                         <select
-                            name="facilityId"
-                            value={form.facilityId}
+                            name="resourceId"
+                            value={form.resourceId}
                             onChange={handleChange}
                             className={`w-full px-4 py-2.5 rounded-xl border text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all
-                ${errors.facilityId ? 'border-red-400 bg-red-50' : 'border-slate-200'}`}
+                ${errors.resourceId ? 'border-red-400 bg-red-50' : 'border-slate-200'}`}
                         >
-                            <option value="">Select a facility...</option>
-                            {facilities.map(f => (
-                                <option key={f.id} value={f.id}>
-                                    {f.name} — {f.location} {f.capacity ? `(Cap: ${f.capacity})` : ''}
+                            <option value="">Select a resource...</option>
+                            {resources.map(r => (
+                                <option key={r.id} value={r.id}>
+                                    {r.name} — {r.location} {r.capacity ? `(Cap: ${r.capacity})` : ''}
                                 </option>
                             ))}
                         </select>
-                        {errors.facilityId && <p className="text-red-500 text-xs mt-1">{errors.facilityId}</p>}
-                        {selectedFacility && (
+                        {errors.resourceId && <p className="text-red-500 text-xs mt-1">{errors.resourceId}</p>}
+                        {selectedResource && (
                             <p className="text-xs text-indigo-600 mt-1">
-                                Type: {selectedFacility.type} · Status: {selectedFacility.status}
+                                Type: {selectedResource.type} · Status: {selectedResource.status}
                             </p>
                         )}
                     </div>

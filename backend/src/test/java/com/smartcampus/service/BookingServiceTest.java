@@ -6,12 +6,12 @@ import com.smartcampus.dto.response.BookingResponse;
 import com.smartcampus.exception.ConflictException;
 import com.smartcampus.exception.ValidationException;
 import com.smartcampus.model.Booking;
-import com.smartcampus.model.Facility;
+import com.smartcampus.model.Resource;
 import com.smartcampus.model.User;
 import com.smartcampus.model.enums.BookingStatus;
-import com.smartcampus.model.enums.FacilityStatus;
+import com.smartcampus.model.enums.ResourceStatus;
 import com.smartcampus.repository.BookingRepository;
-import com.smartcampus.repository.FacilityRepository;
+import com.smartcampus.repository.ResourceRepository;
 import com.smartcampus.repository.UserRepository;
 import com.smartcampus.service.impl.BookingServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
@@ -35,7 +35,7 @@ import static org.mockito.Mockito.*;
 class BookingServiceTest {
 
     @Mock private BookingRepository bookingRepository;
-    @Mock private FacilityRepository facilityRepository;
+    @Mock private ResourceRepository resourceRepository;
     @Mock private UserRepository userRepository;
     @Mock private NotificationService notificationService;
 
@@ -43,7 +43,7 @@ class BookingServiceTest {
     private BookingServiceImpl bookingService;
 
     private User mockUser;
-    private Facility mockFacility;
+    private Resource mockResource;
     private BookingRequest validRequest;
 
     @BeforeEach
@@ -53,14 +53,14 @@ class BookingServiceTest {
         mockUser.setName("Test User");
         mockUser.setEmail("test@test.com");
 
-        mockFacility = new Facility();
-        mockFacility.setId("facility-1");
-        mockFacility.setName("Lab 101");
-        mockFacility.setCapacity(30);
-        mockFacility.setStatus(FacilityStatus.ACTIVE);
+        mockResource = new Resource();
+        mockResource.setId("resource-1");
+        mockResource.setName("Lab 101");
+        mockResource.setCapacity(30);
+        mockResource.setStatus(ResourceStatus.ACTIVE);
 
         validRequest = new BookingRequest();
-        validRequest.setFacilityId("facility-1");
+        validRequest.setResourceId("resource-1");
         validRequest.setDate(LocalDate.now().plusDays(1));
         validRequest.setStartTime(LocalTime.of(9, 0));
         validRequest.setEndTime(LocalTime.of(11, 0));
@@ -73,14 +73,14 @@ class BookingServiceTest {
     @Test
     void createBooking_Success() {
         when(userRepository.findById("user-1")).thenReturn(Optional.of(mockUser));
-        when(facilityRepository.findById("facility-1")).thenReturn(Optional.of(mockFacility));
+        when(resourceRepository.findById("resource-1")).thenReturn(Optional.of(mockResource));
         when(bookingRepository.findConflictingBookings(any(), any(), any(), any()))
                 .thenReturn(Collections.emptyList());
 
         Booking savedBooking = new Booking();
         savedBooking.setId("booking-1");
         savedBooking.setUser(mockUser);
-        savedBooking.setFacility(mockFacility);
+        savedBooking.setResource(mockResource);
         savedBooking.setDate(validRequest.getDate());
         savedBooking.setStartTime(validRequest.getStartTime());
         savedBooking.setEndTime(validRequest.getEndTime());
@@ -119,7 +119,7 @@ class BookingServiceTest {
     void createBooking_ThrowsValidationException_WhenAttendeesExceedCapacity() {
         validRequest.setExpectedAttendees(100); // capacity is 30
         when(userRepository.findById("user-1")).thenReturn(Optional.of(mockUser));
-        when(facilityRepository.findById("facility-1")).thenReturn(Optional.of(mockFacility));
+        when(resourceRepository.findById("resource-1")).thenReturn(Optional.of(mockResource));
 
         assertThrows(ValidationException.class,
                 () -> bookingService.createBooking(validRequest, "user-1"));
@@ -128,7 +128,7 @@ class BookingServiceTest {
     @Test
     void createBooking_ThrowsConflictException_WhenSlotConflicts() {
         when(userRepository.findById("user-1")).thenReturn(Optional.of(mockUser));
-        when(facilityRepository.findById("facility-1")).thenReturn(Optional.of(mockFacility));
+        when(resourceRepository.findById("resource-1")).thenReturn(Optional.of(mockResource));
         when(bookingRepository.findConflictingBookings(any(), any(), any(), any()))
                 .thenReturn(List.of(new Booking())); // simulate conflict
 
@@ -137,10 +137,10 @@ class BookingServiceTest {
     }
 
     @Test
-    void createBooking_ThrowsValidationException_WhenFacilityNotActive() {
-        mockFacility.setStatus(FacilityStatus.OUT_OF_SERVICE);
+    void createBooking_ThrowsValidationException_WhenResourceNotActive() {
+        mockResource.setStatus(ResourceStatus.OUT_OF_SERVICE);
         when(userRepository.findById("user-1")).thenReturn(Optional.of(mockUser));
-        when(facilityRepository.findById("facility-1")).thenReturn(Optional.of(mockFacility));
+        when(resourceRepository.findById("resource-1")).thenReturn(Optional.of(mockResource));
 
         assertThrows(ValidationException.class,
                 () -> bookingService.createBooking(validRequest, "user-1"));
@@ -182,7 +182,7 @@ class BookingServiceTest {
         Booking booking = new Booking();
         booking.setId("booking-1");
         booking.setUser(mockUser);
-        booking.setFacility(mockFacility);
+        booking.setResource(mockResource);
         booking.setDate(LocalDate.now().plusDays(1));
         booking.setStartTime(LocalTime.of(9, 0));
         booking.setEndTime(LocalTime.of(11, 0));
@@ -240,7 +240,7 @@ class BookingServiceTest {
         when(bookingRepository.findConflictingBookings(any(), any(), any(), any()))
                 .thenReturn(Collections.emptyList());
 
-        boolean result = bookingService.hasConflict("facility-1",
+        boolean result = bookingService.hasConflict("resource-1",
                 LocalDate.now().plusDays(1),
                 LocalTime.of(9, 0), LocalTime.of(11, 0), null);
 
@@ -252,7 +252,7 @@ class BookingServiceTest {
         when(bookingRepository.findConflictingBookings(any(), any(), any(), any()))
                 .thenReturn(List.of(new Booking()));
 
-        boolean result = bookingService.hasConflict("facility-1",
+        boolean result = bookingService.hasConflict("resource-1",
                 LocalDate.now().plusDays(1),
                 LocalTime.of(9, 0), LocalTime.of(11, 0), null);
 
