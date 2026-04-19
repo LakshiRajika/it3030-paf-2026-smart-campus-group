@@ -58,6 +58,16 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorBody(403, ex.getMessage()));
     }
 
+    // ── Authentication Failure (401) ─────────────────────────────────────────────
+    @ExceptionHandler(org.springframework.security.core.AuthenticationException.class)
+    public ResponseEntity<Map<String, Object>> handleAuthenticationException(org.springframework.security.core.AuthenticationException ex) {
+        String msg = ex.getMessage();
+        if (msg == null || msg.isEmpty() || msg.contains("Bad credentials")) {
+            msg = "Invalid email or password";
+        }
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorBody(401, msg));
+    }
+
     // ── Business rule / validation logic (400) ───────────────────────────────────
     @ExceptionHandler(ValidationException.class)
     public ResponseEntity<Map<String, Object>> handleBusinessValidation(ValidationException ex) {

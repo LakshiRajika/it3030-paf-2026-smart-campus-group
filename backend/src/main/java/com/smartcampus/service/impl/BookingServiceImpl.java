@@ -93,12 +93,7 @@ public class BookingServiceImpl implements BookingService {
 
         Booking saved = bookingRepository.save(booking);
 
-        // 8. Notify admin (optional: depends on NotificationService implementation)
-        try {
-            notificationService.notifyAdminsNewBooking(saved);
-        } catch (Exception e) {
-            // Notification failure should not break booking creation
-        }
+        // 8. (Optional) Admin notification could go here if implemented
 
         return toResponse(saved);
     }
@@ -209,9 +204,15 @@ public class BookingServiceImpl implements BookingService {
 
         // Notify the user of status change
         try {
-            notificationService.notifyBookingStatusChange(saved);
+            notificationService.createNotification(
+                    saved.getUser().getId(),
+                    "Your booking for " + saved.getResource().getName() + " is now " + newStatus.name(),
+                    com.smartcampus.model.Notification.NotificationType.BOOKING_STATUS,
+                    saved.getId()
+            );
         } catch (Exception e) {
             // Notification failure should not break status update
+            e.printStackTrace();
         }
 
         return toResponse(saved);
