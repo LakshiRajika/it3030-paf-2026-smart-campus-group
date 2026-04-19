@@ -22,5 +22,16 @@ public class User {
     private String email;
     private String name;
     private String picture;
+    private String password;
     private Set<UserRole> roles;
+    private NotificationPreferences notificationPreferences = new NotificationPreferences();
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class NotificationPreferences {
+        private boolean bookingNotifications = true;
+        private boolean ticketStatusNotifications = true;
+        private boolean commentNotifications = true;
+    }
 }

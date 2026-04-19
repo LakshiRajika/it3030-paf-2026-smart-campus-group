@@ -40,6 +40,24 @@ public class JwtTokenProvider {
                 .compact();
     }
 
+    public String createToken(com.smartcampus.model.User user) {
+        CustomUserDetails userPrincipal = new CustomUserDetails(user);
+
+        Date now = new Date();
+        Date expiryDate = new Date(now.getTime() + jwtExpirationInMs);
+
+        SecretKey key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
+
+        return Jwts.builder()
+                .setSubject(userPrincipal.getId())
+                .setIssuedAt(new Date())
+                .setExpiration(expiryDate)
+                .claim("email", userPrincipal.getEmail())
+                .claim("roles", userPrincipal.getAuthorities())
+                .signWith(key, SignatureAlgorithm.HS512)
+                .compact();
+    }
+
     public String getUserIdFromJWT(String token) {
         SecretKey key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
         Claims claims = Jwts.parserBuilder()
