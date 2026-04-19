@@ -13,8 +13,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 import com.smartcampus.repository.TicketRepository;
+import com.smartcampus.service.NotificationService;
 import com.smartcampus.service.TicketService;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
@@ -34,10 +34,12 @@ public class TicketServiceImpl implements TicketService {
 
     private final TicketRepository ticketRepository;
     private final TicketCommentRepository commentRepository;
+    private final NotificationService notificationService;
 
-    public TicketServiceImpl(TicketRepository ticketRepository, TicketCommentRepository commentRepository) {
+    public TicketServiceImpl(TicketRepository ticketRepository, TicketCommentRepository commentRepository, NotificationService notificationService) {
         this.ticketRepository = ticketRepository;
         this.commentRepository = commentRepository;
+        this.notificationService = notificationService;
     }
 
     private final String UPLOAD_DIR = "uploads/";
@@ -132,7 +134,20 @@ public class TicketServiceImpl implements TicketService {
         }
 
         ticket.setUpdatedAt(LocalDateTime.now());
-        return ticketRepository.save(ticket);
+        Ticket saved = ticketRepository.save(ticket);
+        
+        try {
+            notificationService.createNotification(
+                saved.getCreatedById(),
+                "Your ticket regarding " + saved.getCategory() + " is now " + saved.getStatus(),
+                com.smartcampus.model.Notification.NotificationType.TICKET_STATUS,
+                saved.getId()
+            );
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        
+        return saved;
     }
 
     @Override
@@ -153,7 +168,24 @@ public class TicketServiceImpl implements TicketService {
                 .updatedAt(LocalDateTime.now())
                 .build();
 
-        return commentRepository.save(comment);
+        TicketComment savedComment = commentRepository.save(comment);
+
+        try {
+            Ticket ticket = getTicketById(ticketId);
+            // Don't notify if the author is the creator
+            if (!ticket.getCreatedById().equals(commentReq.getAuthorId())) {
+                notificationService.createNotification(
+                    ticket.getCreatedById(),
+                    "New comment on your ticket regarding " + ticket.getCategory(),
+                    com.smartcampus.model.Notification.NotificationType.TICKET_COMMENT,
+                    ticketId
+                );
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return savedComment;
     }
 
     @Override

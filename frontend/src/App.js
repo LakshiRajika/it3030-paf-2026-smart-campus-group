@@ -11,11 +11,13 @@ import ResourceCatalogue from './pages/ResourceCatalogue';
 import ProtectedRoute from './components/Common/ProtectedRoute';
 import Bookings from './pages/Bookings';
 import ManageBookings from './pages/admin/ManageBookings';
+import ManageTickets from './pages/admin/ManageTickets';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import NotificationDropdown from './components/Notifications/NotificationDropdown';
 import './index.css';
 
 const Layout = ({ children }) => {
-  const { user, logout } = useAuth();
+  const { user, logout, hasRole } = useAuth();
   const location = useLocation();
   const isLoginPage = location.pathname === '/login' || location.pathname === '/oauth2/redirect';
 
@@ -40,27 +42,33 @@ const Layout = ({ children }) => {
             <NavLink to="/tickets" className={({ isActive }) => `font-semibold transition-all ${isActive ? 'text-indigo-600 border-b-2 border-indigo-600 pb-1' : 'text-slate-500 hover:text-indigo-600'}`}>Tickets</NavLink>
             <NavLink to="/facilities" className={({ isActive }) => `font-semibold transition-all ${isActive ? 'text-indigo-600 border-b-2 border-indigo-600 pb-1' : 'text-slate-500 hover:text-indigo-600'}`}>Facilities</NavLink>
             <NavLink to="/bookings" className={({ isActive }) => `font-semibold transition-all ${isActive ? 'text-indigo-600 border-b-2 border-indigo-600 pb-1' : 'text-slate-500 hover:text-indigo-600'}`}>Bookings</NavLink>
-            {user && (user.roles?.includes('ROLE_ADMIN') || user.roles?.includes('ADMIN')) && (
+            {hasRole('ADMIN') && (
               <NavLink to="/admin/bookings" className={({ isActive }) => `font-semibold transition-all ${isActive ? 'text-indigo-600 border-b-2 border-indigo-600 pb-1' : 'text-slate-500 hover:text-indigo-600'}`}>Manage Bookings</NavLink>
+            )}
+            {(hasRole('ADMIN') || hasRole('TECHNICIAN')) && (
+              <NavLink to="/admin/tickets" className={({ isActive }) => `font-semibold transition-all ${isActive ? 'text-indigo-600 border-b-2 border-indigo-600 pb-1' : 'text-slate-500 hover:text-indigo-600'}`}>Manage Tickets</NavLink>
             )}
           </nav>
 
           <div className="flex items-center gap-4">
             {user ? (
-              <div className="flex items-center gap-3">
-                <div className="text-right hidden sm:block">
-                  <p className="text-xs font-bold text-slate-800">{user.email?.split('@')[0]}</p>
-                  <button
-                    onClick={logout}
-                    className="text-[10px] text-indigo-600 hover:text-indigo-800 font-bold uppercase tracking-wider transition-all"
-                  >
-                    Logout Session
-                  </button>
+              <>
+                <NotificationDropdown />
+                <div className="flex items-center gap-3 ml-4">
+                  <div className="text-right hidden sm:block">
+                    <p className="text-xs font-bold text-slate-800">{user.email?.split('@')[0]}</p>
+                    <button
+                      onClick={logout}
+                      className="text-[10px] text-indigo-600 hover:text-indigo-800 font-bold uppercase tracking-wider transition-all"
+                    >
+                      Logout Session
+                    </button>
+                  </div>
+                  <div className="w-10 h-10 rounded-full bg-slate-200 border-2 border-white shadow-sm overflow-hidden cursor-pointer hover:opacity-80 transition-opacity" onClick={logout}>
+                    <img src={`https://ui-avatars.com/api/?name=${user.email}&background=6366f1&color=fff`} alt="User" />
+                  </div>
                 </div>
-                <div className="w-10 h-10 rounded-full bg-slate-200 border-2 border-white shadow-sm overflow-hidden cursor-pointer hover:opacity-80 transition-opacity" onClick={logout}>
-                  <img src={`https://ui-avatars.com/api/?name=${user.email}&background=6366f1&color=fff`} alt="User" />
-                </div>
-              </div>
+              </>
             ) : (
               <button onClick={() => window.location.href = '/login'} className="text-sm font-bold text-indigo-600">Login</button>
             )}
@@ -121,6 +129,12 @@ function App() {
             <Route path="/admin/bookings" element={
               <ProtectedRoute roles={['ADMIN']}>
                 <ManageBookings />
+              </ProtectedRoute>
+            } />
+
+            <Route path="/admin/tickets" element={
+              <ProtectedRoute roles={['ADMIN', 'TECHNICIAN']}>
+                <ManageTickets />
               </ProtectedRoute>
             } />
 
