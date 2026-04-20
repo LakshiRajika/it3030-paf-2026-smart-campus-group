@@ -122,19 +122,19 @@ function App() {
             } />
 
             <Route path="/tickets" element={
-              <ProtectedRoute roles={['USER', 'TECHNICIAN', 'MANAGER']}>
+              <ProtectedRoute roles={['USER', 'TECHNICIAN', 'MANAGER', 'ADMIN']}>
                 <Tickets />
               </ProtectedRoute>
             } />
 
             <Route path="/tickets/:id" element={
-              <ProtectedRoute roles={['USER', 'TECHNICIAN', 'MANAGER']}>
+              <ProtectedRoute roles={['USER', 'TECHNICIAN', 'MANAGER', 'ADMIN']}>
                 <TicketDetail />
               </ProtectedRoute>
             } />
 
             <Route path="/bookings" element={
-              <ProtectedRoute roles={['USER', 'TECHNICIAN', 'MANAGER']}>
+              <ProtectedRoute roles={['USER', 'TECHNICIAN', 'MANAGER', 'ADMIN']}>
                 <Bookings />
               </ProtectedRoute>
             } />
@@ -146,7 +146,7 @@ function App() {
             } />
 
             <Route path="/admin/tickets" element={
-              <ProtectedRoute roles={['ADMIN']}>
+              <ProtectedRoute roles={['ADMIN', 'MANAGER']}>
                 <ManageTickets />
               </ProtectedRoute>
             } />
@@ -164,7 +164,7 @@ function App() {
             } />
 
             <Route path="/facilities" element={
-              <ProtectedRoute roles={['USER', 'TECHNICIAN', 'MANAGER']}>
+              <ProtectedRoute roles={['USER', 'TECHNICIAN', 'MANAGER', 'ADMIN']}>
                 <ResourceCatalogue />
               </ProtectedRoute>
             } />
