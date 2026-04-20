@@ -8,10 +8,12 @@ import Unauthorized from './pages/Unauthorized';
 import Analytics from './pages/Analytics';
 import OAuth2RedirectHandler from './pages/OAuth2RedirectHandler';
 import ResourceCatalogue from './pages/ResourceCatalogue';
+import AdminDashboard from './pages/admin/AdminDashboard';
 import ProtectedRoute from './components/Common/ProtectedRoute';
 import Bookings from './pages/Bookings';
 import ManageBookings from './pages/admin/ManageBookings';
 import ManageTickets from './pages/admin/ManageTickets';
+import ManageResources from './pages/admin/ManageResources';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import NotificationDropdown from './components/Notifications/NotificationDropdown';
 import './index.css';
@@ -20,6 +22,7 @@ const Layout = ({ children }) => {
   const { user, logout, hasRole } = useAuth();
   const location = useLocation();
   const isLoginPage = location.pathname === '/login' || location.pathname === '/oauth2/redirect';
+  const isAdmin = hasRole('ADMIN');
 
   if (isLoginPage) return children;
 
@@ -39,14 +42,19 @@ const Layout = ({ children }) => {
 
           <nav className="hidden md:flex items-center gap-8">
             <NavLink to="/dashboard" className={({ isActive }) => `font-semibold transition-all ${isActive ? 'text-indigo-600 border-b-2 border-indigo-600 pb-1' : 'text-slate-500 hover:text-indigo-600'}`}>Dashboard</NavLink>
-            <NavLink to="/tickets" className={({ isActive }) => `font-semibold transition-all ${isActive ? 'text-indigo-600 border-b-2 border-indigo-600 pb-1' : 'text-slate-500 hover:text-indigo-600'}`}>Tickets</NavLink>
-            <NavLink to="/facilities" className={({ isActive }) => `font-semibold transition-all ${isActive ? 'text-indigo-600 border-b-2 border-indigo-600 pb-1' : 'text-slate-500 hover:text-indigo-600'}`}>Facilities</NavLink>
-            <NavLink to="/bookings" className={({ isActive }) => `font-semibold transition-all ${isActive ? 'text-indigo-600 border-b-2 border-indigo-600 pb-1' : 'text-slate-500 hover:text-indigo-600'}`}>Bookings</NavLink>
-            {hasRole('ADMIN') && (
-              <NavLink to="/admin/bookings" className={({ isActive }) => `font-semibold transition-all ${isActive ? 'text-indigo-600 border-b-2 border-indigo-600 pb-1' : 'text-slate-500 hover:text-indigo-600'}`}>Manage Bookings</NavLink>
+            {!isAdmin && (
+              <>
+                <NavLink to="/tickets" className={({ isActive }) => `font-semibold transition-all ${isActive ? 'text-indigo-600 border-b-2 border-indigo-600 pb-1' : 'text-slate-500 hover:text-indigo-600'}`}>Tickets</NavLink>
+                <NavLink to="/facilities" className={({ isActive }) => `font-semibold transition-all ${isActive ? 'text-indigo-600 border-b-2 border-indigo-600 pb-1' : 'text-slate-500 hover:text-indigo-600'}`}>Facilities</NavLink>
+                <NavLink to="/bookings" className={({ isActive }) => `font-semibold transition-all ${isActive ? 'text-indigo-600 border-b-2 border-indigo-600 pb-1' : 'text-slate-500 hover:text-indigo-600'}`}>Bookings</NavLink>
+              </>
             )}
-            {(hasRole('ADMIN') || hasRole('TECHNICIAN')) && (
-              <NavLink to="/admin/tickets" className={({ isActive }) => `font-semibold transition-all ${isActive ? 'text-indigo-600 border-b-2 border-indigo-600 pb-1' : 'text-slate-500 hover:text-indigo-600'}`}>Manage Tickets</NavLink>
+            {isAdmin && (
+              <>
+                <NavLink to="/admin/resources" className={({ isActive }) => `font-semibold transition-all ${isActive ? 'text-indigo-600 border-b-2 border-indigo-600 pb-1' : 'text-slate-500 hover:text-indigo-600'}`}>Manage Resources</NavLink>
+                <NavLink to="/admin/bookings" className={({ isActive }) => `font-semibold transition-all ${isActive ? 'text-indigo-600 border-b-2 border-indigo-600 pb-1' : 'text-slate-500 hover:text-indigo-600'}`}>Manage Bookings</NavLink>
+                <NavLink to="/admin/tickets" className={({ isActive }) => `font-semibold transition-all ${isActive ? 'text-indigo-600 border-b-2 border-indigo-600 pb-1' : 'text-slate-500 hover:text-indigo-600'}`}>Manage Tickets</NavLink>
+              </>
             )}
           </nav>
 
@@ -91,6 +99,11 @@ const Layout = ({ children }) => {
   );
 };
 
+const DashboardRoute = () => {
+  const { hasRole } = useAuth();
+  return hasRole('ADMIN') ? <AdminDashboard /> : <Dashboard />;
+};
+
 function App() {
   return (
     <AuthProvider>
@@ -104,24 +117,24 @@ function App() {
 
             <Route path="/dashboard" element={
               <ProtectedRoute>
-                <Dashboard />
+                <DashboardRoute />
               </ProtectedRoute>
             } />
 
             <Route path="/tickets" element={
-              <ProtectedRoute>
+              <ProtectedRoute roles={['USER', 'TECHNICIAN', 'MANAGER']}>
                 <Tickets />
               </ProtectedRoute>
             } />
 
             <Route path="/tickets/:id" element={
-              <ProtectedRoute>
+              <ProtectedRoute roles={['USER', 'TECHNICIAN', 'MANAGER']}>
                 <TicketDetail />
               </ProtectedRoute>
             } />
 
             <Route path="/bookings" element={
-              <ProtectedRoute>
+              <ProtectedRoute roles={['USER', 'TECHNICIAN', 'MANAGER']}>
                 <Bookings />
               </ProtectedRoute>
             } />
@@ -133,8 +146,14 @@ function App() {
             } />
 
             <Route path="/admin/tickets" element={
-              <ProtectedRoute roles={['ADMIN', 'TECHNICIAN']}>
+              <ProtectedRoute roles={['ADMIN']}>
                 <ManageTickets />
+              </ProtectedRoute>
+            } />
+
+            <Route path="/admin/resources" element={
+              <ProtectedRoute roles={['ADMIN']}>
+                <ManageResources />
               </ProtectedRoute>
             } />
 
@@ -145,7 +164,7 @@ function App() {
             } />
 
             <Route path="/facilities" element={
-              <ProtectedRoute>
+              <ProtectedRoute roles={['USER', 'TECHNICIAN', 'MANAGER']}>
                 <ResourceCatalogue />
               </ProtectedRoute>
             } />
