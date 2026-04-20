@@ -8,7 +8,7 @@ const pill = (text, tone) => {
   return <span className={`${base} ${tones[tone] || tones.slate}`}>{text}</span>;
 };
 
-export default function ResourceTable({ resources, onEdit, onDelete }) {
+export default function ResourceTable({ resources, onEdit, onDelete, showActions = true }) {
   if (!resources || resources.length === 0) {
     return (
       <div className="bg-white border border-slate-200 rounded-2xl p-6 text-slate-600">
@@ -30,7 +30,9 @@ export default function ResourceTable({ resources, onEdit, onDelete }) {
               <th className="text-left px-4 py-3 font-black text-slate-700">Location</th>
               <th className="text-left px-4 py-3 font-black text-slate-700">Availability</th>
               <th className="text-left px-4 py-3 font-black text-slate-700">Status</th>
-              <th className="text-right px-4 py-3 font-black text-slate-700">Actions</th>
+              {showActions && (
+                <th className="text-right px-4 py-3 font-black text-slate-700">Actions</th>
+              )}
             </tr>
           </thead>
           <tbody>
@@ -50,22 +52,24 @@ export default function ResourceTable({ resources, onEdit, onDelete }) {
                   <td className="px-4 py-3">{r.location}</td>
                   <td className="px-4 py-3">{availability}</td>
                   <td className="px-4 py-3">{pill(statusLabel || "—", statusTone)}</td>
-                  <td className="px-4 py-3 text-right">
-                    <div className="inline-flex items-center gap-2">
-                      <button
-                        className="px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 font-semibold"
-                        onClick={() => onEdit?.(r)}
-                      >
-                        Edit
-                      </button>
-                      <button
-                        className="px-3 py-1.5 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 font-semibold"
-                        onClick={() => onDelete?.(r)}
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </td>
+                  {showActions && (
+                    <td className="px-4 py-3 text-right">
+                      <div className="inline-flex items-center gap-2">
+                        <button
+                          className="px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 font-semibold"
+                          onClick={() => onEdit?.(r)}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          className="px-3 py-1.5 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 font-semibold"
+                          onClick={() => onDelete?.(r)}
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </td>
+                  )}
                 </tr>
               );
             })}
