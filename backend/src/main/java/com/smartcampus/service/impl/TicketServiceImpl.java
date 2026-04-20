@@ -64,6 +64,9 @@ public class TicketServiceImpl implements TicketService {
                     .build();
 
             if (attachments != null && !attachments.isEmpty()) {
+                if (attachments.size() > 3) {
+                    throw new com.smartcampus.exception.ValidationException("Maximum 3 attachments are allowed per ticket.");
+                }
                 System.out.println("Found " + attachments.size() + " attachments");
                 Path uploadPath = Paths.get(UPLOAD_DIR);
                 if (!Files.exists(uploadPath)) {
