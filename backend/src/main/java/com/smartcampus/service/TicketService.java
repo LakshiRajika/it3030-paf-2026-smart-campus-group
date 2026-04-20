@@ -16,6 +16,7 @@ public interface TicketService {
     List<Ticket> getAllTickets();
     List<Ticket> getTicketsByUserId(String userId);
     Ticket updateTicketStatus(String id, TicketUpdateDto request);
+    void deleteTicket(String id, String userId);
     
     TicketComment addComment(String ticketId, TicketCommentRequestDto commentReq);
     List<TicketComment> getCommentsByTicketId(String ticketId);
