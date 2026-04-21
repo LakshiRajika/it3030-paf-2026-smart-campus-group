@@ -39,7 +39,7 @@ const TicketDetail = () => {
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  }, [id, hasRole]);
 
   useEffect(() => {
     fetchTicketDetails();

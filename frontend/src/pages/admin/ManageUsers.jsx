@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import userService from '../../services/userService';
-import { User, Shield, CheckCircle, XCircle } from 'lucide-react';
+import { User, Shield } from 'lucide-react';
 
 const ManageUsers = () => {
   const [users, setUsers] = useState([]);

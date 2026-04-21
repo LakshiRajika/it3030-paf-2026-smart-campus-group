@@ -6,7 +6,6 @@ import { useAuth } from '../context/AuthContext';
 import { 
   Clock, 
   CheckCircle2, 
-  Ticket as TicketIcon,
   ChevronRight,
   ClipboardList,
   AlertCircle
