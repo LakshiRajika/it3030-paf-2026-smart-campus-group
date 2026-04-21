@@ -81,6 +81,17 @@ const ticketService = {
   getAnalytics: async () => {
     const response = await api.get('/tickets/analytics');
     return response.data;
+  },
+
+  // Technician assignments
+  getTechnicians: async () => {
+    const response = await api.get('/users/technicians');
+    return response.data;
+  },
+
+  getAssignedTickets: async (technicianId) => {
+    const response = await api.get(`/tickets/assigned/${technicianId}`);
+    return response.data;
   }
 };
 

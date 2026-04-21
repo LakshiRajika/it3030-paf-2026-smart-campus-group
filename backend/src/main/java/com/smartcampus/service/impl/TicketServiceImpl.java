@@ -248,6 +248,12 @@ public class TicketServiceImpl implements TicketService {
         analytics.put("avgResolutionTimeHours", avgResTime);
         analytics.put("totalTickets", (long) tickets.size());
 
+        // Technician Workload
+        Map<String, Long> techWorkload = tickets.stream()
+                .filter(t -> t.getAssignedToId() != null)
+                .collect(Collectors.groupingBy(Ticket::getAssignedToId, Collectors.counting()));
+        analytics.put("technicianWorkload", techWorkload);
+
         return analytics;
     }
 

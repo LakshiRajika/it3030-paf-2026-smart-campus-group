@@ -10,6 +10,7 @@ const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
 const Analytics = () => {
     const [data, setData] = useState(null);
+    const [technicians, setTechnicians] = useState([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -18,8 +19,12 @@ const Analytics = () => {
 
     const fetchAnalytics = async () => {
         try {
-            const stats = await ticketService.getAnalytics();
+            const [stats, techs] = await Promise.all([
+                ticketService.getAnalytics(),
+                ticketService.getTechnicians()
+            ]);
             setData(stats);
+            setTechnicians(techs);
         } catch (error) {
             console.error("Error fetching analytics:", error);
         } finally {
@@ -44,6 +49,14 @@ const Analytics = () => {
         name: key,
         count: data.categoryDistribution[key]
     }));
+
+    const technicianData = Object.keys(data.technicianWorkload || {}).map(id => {
+        const tech = technicians.find(t => t.id === id);
+        return {
+            name: tech ? (tech.name || tech.email.split('@')[0]) : 'Unknown',
+            tickets: data.technicianWorkload[id]
+        };
+    });
 
     return (
         <div className="max-w-7xl mx-auto px-4 py-8 space-y-8">
@@ -145,6 +158,28 @@ const Analytics = () => {
                             </BarChart>
                         </ResponsiveContainer>
                     </div>
+                </div>
+            </div>
+
+            {/* Technician Workload */}
+            <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
+                <h3 className="text-lg font-bold text-slate-800 mb-8 flex items-center gap-2">
+                    Technician Workload
+                    <span className="text-xs font-normal text-slate-400 font-sans tracking-normal">Number of assigned tickets per specialist</span>
+                </h3>
+                <div className="h-[350px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={technicianData} layout="vertical" margin={{ left: 40 }}>
+                            <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
+                            <XAxis type="number" axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 12}} />
+                            <YAxis type="category" dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 12, fontWeight: 'bold'}} width={100} />
+                            <Tooltip 
+                                cursor={{fill: '#f8fafc'}}
+                                contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}
+                            />
+                            <Bar dataKey="tickets" fill="#8b5cf6" radius={[0, 8, 8, 0]} barSize={30} />
+                        </BarChart>
+                    </ResponsiveContainer>
                 </div>
             </div>
         </div>

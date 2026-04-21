@@ -15,6 +15,7 @@ const TicketDetail = () => {
   const [submitting, setSubmitting] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [statusUpdating, setStatusUpdating] = useState(false);
+  const [technicians, setTechnicians] = useState([]);
 
   const { user, hasRole } = useAuth();
 
@@ -27,6 +28,11 @@ const TicketDetail = () => {
       ]);
       setTicket(ticketData);
       setComments(commentsData);
+
+      if (hasRole('ADMIN') || hasRole('MANAGER')) {
+        const techs = await ticketService.getTechnicians();
+        setTechnicians(techs);
+      }
     } catch (err) {
       console.error(err);
       alert('Error fetching ticket details: ' + (err.response?.data?.message || err.message));
@@ -57,6 +63,18 @@ const TicketDetail = () => {
       fetchTicketDetails();
     } catch (err) {
       alert('Error updating status: ' + (err.response?.data?.message || err.message));
+    } finally {
+      setStatusUpdating(false);
+    }
+  };
+
+  const handleAssignTechnician = async (techId) => {
+    try {
+      setStatusUpdating(true);
+      await ticketService.updateTicket(id, { assignedToId: techId });
+      fetchTicketDetails();
+    } catch (err) {
+      alert('Error assigning technician: ' + (err.response?.data?.message || err.message));
     } finally {
       setStatusUpdating(false);
     }
@@ -291,6 +309,31 @@ const TicketDetail = () => {
               ))}
             </div>
           </div>
+
+          {(hasRole('ADMIN') || hasRole('MANAGER')) && (
+            <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100">
+              <h4 className="text-sm font-bold text-slate-400 uppercase mb-4 tracking-wider">Assign Technician</h4>
+              <div className="space-y-3">
+                <select
+                  value={ticket.assignedToId || ''}
+                  onChange={(e) => handleAssignTechnician(e.target.value)}
+                  className="w-full p-2.5 rounded-xl text-sm bg-slate-50 border-none focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                >
+                  <option value="">Unassigned</option>
+                  {technicians.map(tech => (
+                    <option key={tech.id} value={tech.id}>
+                      {tech.name || tech.email}
+                    </option>
+                  ))}
+                </select>
+                {ticket.assignedToId && (
+                  <p className="text-[10px] text-center text-slate-400">
+                    Currently assigned to: {technicians.find(t => t.id === ticket.assignedToId)?.name || 'Loading...'}
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
 
           <div className="bg-slate-900 rounded-3xl p-6 text-white shadow-xl shadow-slate-200">
             <h4 className="text-xs font-bold text-slate-400 uppercase mb-4 tracking-widest">SLA Timers</h4>
