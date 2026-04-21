@@ -12,6 +12,7 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import ProtectedRoute from './components/Common/ProtectedRoute';
 import Bookings from './pages/Bookings';
 import ManageBookings from './pages/admin/ManageBookings';
+import BookingAnalytics from './pages/admin/BookingAnalytics';
 import ManageTickets from './pages/admin/ManageTickets';
 import ManageResources from './pages/admin/ManageResources';
 import CheckInVerification from './pages/CheckInVerification';
@@ -149,6 +150,12 @@ function App() {
             <Route path="/admin/bookings" element={
               <ProtectedRoute roles={['ADMIN']}>
                 <ManageBookings />
+              </ProtectedRoute>
+            } />
+
+            <Route path="/admin/booking-analytics" element={
+              <ProtectedRoute roles={['ADMIN']}>
+                <BookingAnalytics />
               </ProtectedRoute>
             } />
 

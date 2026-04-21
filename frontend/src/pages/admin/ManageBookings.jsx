@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
     Search, RefreshCw, CheckCircle, XCircle, Clock3,
-    Ban, BookOpen, Loader, Building2
+    Ban, BookOpen, Loader, Building2, BarChart3
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import BookingCard from '../../components/booking/BookingCard';
 import BookingDetail from '../../components/booking/BookingDetail';
 import ConfirmModal from '../../components/ConfirmModal';
@@ -88,20 +89,30 @@ const ManageBookings = () => {
     return (
         <div className="max-w-7xl mx-auto px-4 py-8">
             {/* Header */}
-            <div className="mb-8">
-                <div className="flex items-center gap-3 mb-2">
-                    <h1 className="text-3xl font-black text-slate-900 tracking-tight">Manage Bookings</h1>
-                    {pendingCount > 0 && (
-                        <span className="px-3 py-1 bg-amber-100 text-amber-700 text-sm font-bold rounded-full border border-amber-200">
-                            {pendingCount} pending review
-                        </span>
-                    )}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+                <div>
+                    <div className="flex items-center gap-3 mb-2">
+                        <h1 className="text-3xl font-black text-slate-900 tracking-tight">Manage Bookings</h1>
+                        {pendingCount > 0 && (
+                            <span className="px-3 py-1 bg-amber-100 text-amber-700 text-sm font-bold rounded-full border border-amber-200">
+                                {pendingCount} pending review
+                            </span>
+                        )}
+                    </div>
+                    <p className="text-slate-500">Review, approve, or reject all resource booking requests</p>
                 </div>
-                <p className="text-slate-500">Review, approve, or reject all resource booking requests</p>
+
+                <Link
+                    to="/admin/booking-analytics"
+                    className="bg-slate-900 text-white px-5 py-2.5 rounded-2xl hover:bg-slate-800 transition-all flex items-center gap-2 shadow-xl shadow-slate-200 font-bold text-sm"
+                >
+                    <BarChart3 className="w-4 h-4" />
+                    Analytics Dashboard
+                </Link>
             </div>
 
             {/* Stats */}
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
                 {STATUS_FILTERS.map(({ value, label, icon: Icon }) => {
                     const count = value ? bookings.filter(b => b.status === value).length : bookings.length;
                     return (

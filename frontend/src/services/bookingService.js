@@ -141,6 +141,16 @@ const bookingService = {
         });
         return response.data;
     },
+
+    /**
+     * Get aggregated booking analytics (Admin only)
+     */
+    getAnalytics: async () => {
+        const response = await axios.get(`${API_URL}/bookings/analytics`, {
+            headers: authHeaders(),
+        });
+        return response.data;
+    },
 };
 
 export default bookingService;

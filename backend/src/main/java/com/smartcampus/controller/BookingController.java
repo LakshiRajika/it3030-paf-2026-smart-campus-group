@@ -2,6 +2,7 @@ package com.smartcampus.controller;
 
 import com.smartcampus.dto.request.BookingRequest;
 import com.smartcampus.dto.request.BookingStatusUpdateRequest;
+import com.smartcampus.dto.response.BookingAnalyticsResponse;
 import com.smartcampus.dto.response.BookingResponse;
 import com.smartcampus.model.enums.BookingStatus;
 import com.smartcampus.security.CustomUserDetails;
@@ -172,6 +173,17 @@ public class BookingController {
         }
 
         return ResponseEntity.ok(bookings);
+    }
+
+    /**
+     * GET /api/bookings/analytics
+     * Get aggregated booking statistics for the admin dashboard.
+     */
+    @GetMapping("/analytics")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<BookingAnalyticsResponse> getAnalytics() {
+        BookingAnalyticsResponse response = bookingService.getAnalytics();
+        return ResponseEntity.ok(response);
     }
 
     /**
