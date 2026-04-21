@@ -18,6 +18,7 @@ import com.smartcampus.repository.UserRepository;
 import com.smartcampus.service.BookingService;
 import com.smartcampus.service.NotificationService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -34,6 +35,12 @@ public class BookingServiceImpl implements BookingService {
     @Autowired
     private ResourceRepository resourceRepository;
 
+    @Value("${app.jwt.expirationMs}")
+    private int jwtExpirationMs;
+
+    @Value("${app.security.staff-pin:1234}")
+    private String staffPin;
+
     @Autowired
     private UserRepository userRepository;
 
@@ -49,9 +56,17 @@ public class BookingServiceImpl implements BookingService {
             throw new ValidationException("End time must be after start time");
         }
 
-        // 2. Validate date is not in the past
-        if (request.getDate().isBefore(LocalDate.now())) {
+        // 2. Validate date and time
+        LocalDate today = LocalDate.now();
+        if (request.getDate().isBefore(today)) {
             throw new ValidationException("Booking date cannot be in the past");
+        }
+        
+        if (request.getDate().equals(today)) {
+            // Allow up to 30 mins grace period for testing/latency/clock skew issues
+            if (request.getStartTime().isBefore(LocalTime.now().minusMinutes(30))) {
+                throw new ValidationException("Start time (" + request.getStartTime() + ") is too far in the past. Current server time is " + LocalTime.now().format(java.time.format.DateTimeFormatter.ofPattern("HH:mm")));
+            }
         }
 
         // 3. Fetch user
@@ -146,6 +161,9 @@ public class BookingServiceImpl implements BookingService {
             throw new UnauthorizedException("You are not authorized to view this booking");
         }
 
+        // Ensure token exists when a single booking is fetched (e.g. for QR viewing)
+        booking = ensureTokenExists(booking);
+
         return toResponse(booking);
     }
 
@@ -155,6 +173,7 @@ public class BookingServiceImpl implements BookingService {
     public List<BookingResponse> getAllBookings() {
         return bookingRepository.findAll()
                 .stream()
+                .map(this::ensureTokenExists)
                 .map(this::toResponse)
                 .collect(Collectors.toList());
     }
@@ -163,6 +182,7 @@ public class BookingServiceImpl implements BookingService {
     public List<BookingResponse> getAllBookingsByStatus(BookingStatus status) {
         return bookingRepository.findByStatus(status)
                 .stream()
+                .map(this::ensureTokenExists)
                 .map(this::toResponse)
                 .collect(Collectors.toList());
     }
@@ -171,6 +191,7 @@ public class BookingServiceImpl implements BookingService {
     public List<BookingResponse> getAllBookingsByResource(String resourceId) {
         return bookingRepository.findByResourceId(resourceId)
                 .stream()
+                .map(this::ensureTokenExists)
                 .map(this::toResponse)
                 .collect(Collectors.toList());
     }
@@ -200,6 +221,9 @@ public class BookingServiceImpl implements BookingService {
             booking.setAdminReason(request.getReason());
         }
 
+        // Ensure token exists when status is updated
+        booking = ensureTokenExists(booking);
+
         Booking saved = bookingRepository.save(booking);
 
         // Notify the user of status change
@@ -219,6 +243,74 @@ public class BookingServiceImpl implements BookingService {
     }
 
     // ─── Conflict Detection ──────────────────────────────────────────────────────
+
+    @Override
+    public BookingResponse verifyAndCheckIn(String bookingId) {
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new ResourceNotFoundException("Booking not found with id: " + bookingId));
+
+        // 1. Must be APPROVED
+        if (booking.getStatus() != BookingStatus.APPROVED) {
+            throw new ValidationException("Booking must be APPROVED to check in. Current status: " + booking.getStatus());
+        }
+
+        // 2. Cannot check in twice
+        if (booking.isCheckedIn()) {
+            throw new ValidationException("Student has already checked in for this booking at " + booking.getCheckedInAt());
+        }
+
+        // 3. Time validation (Only check in on the day of booking)
+        LocalDate today = LocalDate.now();
+        if (!booking.getDate().equals(today)) {
+            throw new ValidationException("Check-in is only allowed on the scheduled date: " + booking.getDate());
+        }
+
+        // 4. Update status
+        booking.setCheckedIn(true);
+        booking.setCheckedInAt(java.time.LocalDateTime.now());
+        
+        Booking saved = bookingRepository.save(booking);
+        return toResponse(saved);
+    }
+
+    @Override
+    public BookingResponse verifyAndCheckInPublic(String id, String token, String pin) {
+        // 1. PIN Check
+        if (pin == null || !pin.equals(staffPin)) {
+            throw new ValidationException("Invalid staff security PIN");
+        }
+
+        Booking booking = bookingRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Booking not found with id: " + id));
+
+        // 2. Token validation
+        if (booking.getCheckInToken() == null || !booking.getCheckInToken().equals(token)) {
+            throw new ValidationException("Invalid check-in token");
+        }
+
+        // 2. Status validation (Must be APPROVED)
+        if (booking.getStatus() != BookingStatus.APPROVED) {
+            throw new ValidationException("Booking must be APPROVED to check in. Current status: " + booking.getStatus());
+        }
+
+        // 3. Already checked in?
+        if (booking.isCheckedIn()) {
+            // If already checked in, we just return the response (idempotent for the scanner)
+            return toResponse(booking);
+        }
+
+        // 4. Time validation (Only on the day of booking)
+        if (!booking.getDate().equals(LocalDate.now())) {
+            throw new ValidationException("Check-in is only allowed on the scheduled date: " + booking.getDate());
+        }
+
+        // 5. Update status
+        booking.setCheckedIn(true);
+        booking.setCheckedInAt(java.time.LocalDateTime.now());
+        
+        Booking saved = bookingRepository.save(booking);
+        return toResponse(saved);
+    }
 
     @Override
     public boolean hasConflict(String resourceId, LocalDate date,
@@ -254,6 +346,14 @@ public class BookingServiceImpl implements BookingService {
         }
     }
 
+    private Booking ensureTokenExists(Booking booking) {
+        if (booking.getCheckInToken() == null || booking.getCheckInToken().isBlank()) {
+            booking.setCheckInToken(java.util.UUID.randomUUID().toString());
+            return bookingRepository.save(booking);
+        }
+        return booking;
+    }
+
     private BookingResponse toResponse(Booking booking) {
         BookingResponse res = new BookingResponse();
         res.setId(booking.getId());
@@ -266,6 +366,9 @@ public class BookingServiceImpl implements BookingService {
         res.setAdminReason(booking.getAdminReason());
         res.setCreatedAt(booking.getCreatedAt());
         res.setUpdatedAt(booking.getUpdatedAt());
+        res.setCheckedIn(booking.isCheckedIn());
+        res.setCheckedInAt(booking.getCheckedInAt());
+        res.setCheckInToken(booking.getCheckInToken());
 
         if (booking.getUser() != null) {
             res.setUserId(booking.getUser().getId());

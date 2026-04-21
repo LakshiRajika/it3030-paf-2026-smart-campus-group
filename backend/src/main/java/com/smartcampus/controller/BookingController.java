@@ -175,6 +175,27 @@ public class BookingController {
         return ResponseEntity.ok(response);
     }
 
+    @PostMapping("/{id}/check-in")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<BookingResponse> checkIn(@PathVariable String id) {
+        BookingResponse response = bookingService.verifyAndCheckIn(id);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * POST /api/bookings/public/check-in/{id}
+     * Public endpoint to mark a student as checked in after scanning their QR code.
+     * Uses a secret token for security instead of standard authentication.
+     */
+    @PostMapping("/public/check-in/{id}")
+    public ResponseEntity<BookingResponse> checkInPublic(
+            @PathVariable String id,
+            @RequestParam String token,
+            @RequestParam String pin) {
+        BookingResponse response = bookingService.verifyAndCheckInPublic(id, token, pin);
+        return ResponseEntity.ok(response);
+    }
+
     /**
      * DELETE /api/bookings/{id}
      * Hard-delete a booking record (Admin only, for cleanup purposes).

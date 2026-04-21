@@ -14,6 +14,7 @@ import Bookings from './pages/Bookings';
 import ManageBookings from './pages/admin/ManageBookings';
 import ManageTickets from './pages/admin/ManageTickets';
 import ManageResources from './pages/admin/ManageResources';
+import CheckInVerification from './pages/CheckInVerification';
 import ManageUsers from './pages/admin/ManageUsers';
 import TechnicianTasks from './pages/TechnicianTasks';
 import { AuthProvider, useAuth } from './context/AuthContext';
@@ -180,6 +181,11 @@ function App() {
                 <ResourceCatalogue />
               </ProtectedRoute>
             } />
+
+            <Route path="/verify-checkin/:bookingId" element={
+              <CheckInVerification />
+            } />
+
             <Route path="/technician/tasks" element={
               <ProtectedRoute roles={['TECHNICIAN']}>
                 <TechnicianTasks />

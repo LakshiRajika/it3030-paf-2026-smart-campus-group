@@ -24,6 +24,9 @@ public class BookingResponse {
     private String adminReason;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private boolean checkedIn;
+    private LocalDateTime checkedInAt;
+    private String checkInToken;
 
     // Getters and Setters
     public String getId() { return id; }
@@ -76,4 +79,13 @@ public class BookingResponse {
 
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+
+    public boolean isCheckedIn() { return checkedIn; }
+    public void setCheckedIn(boolean checkedIn) { this.checkedIn = checkedIn; }
+
+    public LocalDateTime getCheckedInAt() { return checkedInAt; }
+    public void setCheckedInAt(LocalDateTime checkedInAt) { this.checkedInAt = checkedInAt; }
+
+    public String getCheckInToken() { return checkInToken; }
+    public void setCheckInToken(String checkInToken) { this.checkInToken = checkInToken; }
 }

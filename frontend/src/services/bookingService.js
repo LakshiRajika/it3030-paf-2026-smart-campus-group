@@ -1,6 +1,17 @@
 import axios from 'axios';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8081/api';
+const BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8081/api';
+
+// Dynamically determine the API URL based on the current hostname
+// This allows mobile devices on the network to connect to the PC's backend
+const getApiUrl = () => {
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        return BASE_URL;
+    }
+    return `http://${window.location.hostname}:8081/api`;
+};
+
+const API_URL = getApiUrl();
 
 // Helper to get auth headers
 const authHeaders = () => {
@@ -97,6 +108,26 @@ const bookingService = {
     deleteBooking: async (id) => {
         const response = await axios.delete(`${API_URL}/bookings/${id}`, {
             headers: authHeaders(),
+        });
+        return response.data;
+    },
+
+    /**
+     * Scan check-in (Admin only)
+     */
+    checkIn: async (id) => {
+        const response = await axios.post(`${API_URL}/bookings/${id}/check-in`, {}, {
+            headers: authHeaders(),
+        });
+        return response.data;
+    },
+
+    /**
+     * Public Check-in (for phone scanning without login)
+     */
+    checkInPublic: async (id, token, pin) => {
+        const response = await axios.post(`${API_URL}/bookings/public/check-in/${id}`, null, {
+            params: { token, pin }
         });
         return response.data;
     },

@@ -7,6 +7,7 @@ import com.smartcampus.model.enums.BookingStatus;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Document(collection = "bookings")
 public class Booking {
@@ -34,10 +35,16 @@ public class Booking {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
+    private boolean checkedIn = false;
+    private LocalDateTime checkedInAt;
+    
+    private String checkInToken;
+
     // Constructors
     public Booking() {
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
+        this.checkInToken = UUID.randomUUID().toString();
     }
 
     // Getters and Setters
@@ -79,4 +86,13 @@ public class Booking {
 
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+
+    public boolean isCheckedIn() { return checkedIn; }
+    public void setCheckedIn(boolean checkedIn) { this.checkedIn = checkedIn; }
+
+    public LocalDateTime getCheckedInAt() { return checkedInAt; }
+    public void setCheckedInAt(LocalDateTime checkedInAt) { this.checkedInAt = checkedInAt; }
+
+    public String getCheckInToken() { return checkInToken; }
+    public void setCheckInToken(String checkInToken) { this.checkInToken = checkInToken; }
 }

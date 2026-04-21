@@ -10,7 +10,7 @@ public class BookingRequest {
     private String resourceId;
 
     @NotNull(message = "Date is required")
-    @Future(message = "Booking date must be in the future")
+    @FutureOrPresent(message = "Booking date must be today or in the future")
     private LocalDate date;
 
     @NotNull(message = "Start time is required")

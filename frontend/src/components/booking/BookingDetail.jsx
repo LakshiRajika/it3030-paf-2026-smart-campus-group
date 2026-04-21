@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { X, Calendar, Clock, Users, FileText, MapPin, CheckCircle, XCircle, AlertCircle, Loader } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Calendar, Clock, Users, FileText, MapPin, CheckCircle, XCircle, AlertCircle, Loader, QrCode } from 'lucide-react';
+import { QRCodeCanvas } from 'qrcode.react';
 import bookingService from '../../services/bookingService';
 
 const STATUS_COLORS = {
@@ -9,11 +10,27 @@ const STATUS_COLORS = {
     CANCELLED: 'bg-slate-100 text-slate-500',
 };
 
-const BookingDetail = ({ booking, isAdmin, onClose, onUpdated }) => {
+const BookingDetail = ({ booking: initialBooking, isAdmin, onClose, onUpdated }) => {
+    const [booking, setBooking] = useState(initialBooking);
     const [rejectionReason, setRejectionReason] = useState('');
     const [showRejectInput, setShowRejectInput] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [showQR, setShowQR] = useState(false);
+
+    // Refresh data on mount to ensure we have the secret token and latest status
+    useEffect(() => {
+        const refreshData = async () => {
+            try {
+                const latest = await bookingService.getBookingById(initialBooking.id);
+                setBooking(latest);
+                if (onUpdated) onUpdated(latest);
+            } catch (err) {
+                console.error("Failed to sync booking data:", err);
+            }
+        };
+        refreshData();
+    }, [initialBooking.id, onUpdated]);
 
     const formatDate = (d) => d ? new Date(d).toLocaleDateString('en-US', {
         weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
@@ -134,6 +151,71 @@ const BookingDetail = ({ booking, isAdmin, onClose, onUpdated }) => {
                         <span>Created: {booking.createdAt ? new Date(booking.createdAt).toLocaleString() : '—'}</span>
                         <span>Updated: {booking.updatedAt ? new Date(booking.updatedAt).toLocaleString() : '—'}</span>
                     </div>
+
+                    {/* Check-in Info */}
+                    {booking.checkedIn && (
+                        <div className="p-4 bg-emerald-50 rounded-xl border border-emerald-100 flex items-center gap-3">
+                            <CheckCircle size={20} className="text-emerald-600" />
+                            <div>
+                                <p className="text-xs font-bold text-emerald-600 uppercase tracking-wider">Checked In</p>
+                                <p className="text-sm text-emerald-900 font-medium">Verified at {new Date(booking.checkedInAt).toLocaleString()}</p>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* QR Code Section */}
+                    {booking.status === 'APPROVED' && !booking.checkedIn && (
+                        <div className="pt-4 border-t border-slate-100">
+                            {!showQR ? (
+                                <button
+                                    onClick={() => setShowQR(true)}
+                                    className="w-full flex items-center justify-center gap-2 py-3 bg-indigo-50 text-indigo-700 font-bold rounded-xl hover:bg-indigo-100 transition-all border border-indigo-200 shadow-sm"
+                                >
+                                    <QrCode size={18} />
+                                    View Check-in QR Code
+                                </button>
+                            ) : (
+                                <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100 flex flex-col items-center text-center animate-in zoom-in duration-300">
+                                    <div className="bg-white p-4 rounded-2xl shadow-xl mb-4 border border-slate-200">
+                                        {booking.checkInToken ? (
+                                            <QRCodeCanvas
+                                                value={`${window.location.protocol}//192.168.8.142:3000/verify-checkin/${booking.id}?token=${booking.checkInToken}`}
+                                                size={180}
+                                                level={"H"}
+                                                includeMargin={true}
+                                            />
+                                        ) : (
+                                            <div className="w-[180px] h-[180px] flex flex-col items-center justify-center gap-2">
+                                                <Loader className="animate-spin text-indigo-400" size={32} />
+                                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">Generating QR...</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                    <h3 className="font-bold text-slate-800">Check-in QR Code</h3>
+                                    <p className="text-xs text-slate-500 mt-1 px-4 leading-relaxed">
+                                        Present this code at the facility entrance for verification by staff.
+                                    </p>
+                                    
+                                    {/* Simulation Link for Desktop Testing */}
+                                    <a 
+                                        href={`/verify-checkin/${booking.id}?token=${booking.checkInToken}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="mt-3 text-[10px] font-bold text-indigo-500 hover:text-indigo-700 underline uppercase tracking-widest"
+                                    >
+                                        Testing on Desktop? Click to simulate scan
+                                    </a>
+
+                                    <button
+                                        onClick={() => setShowQR(false)}
+                                        className="mt-4 text-xs font-bold text-slate-400 hover:text-slate-600"
+                                    >
+                                        Hide QR Code
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    )}
 
                     {/* Admin Actions */}
                     {isAdmin && booking.status === 'PENDING' && (
