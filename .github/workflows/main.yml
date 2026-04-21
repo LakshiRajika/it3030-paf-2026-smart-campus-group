@@ -2,9 +2,16 @@ name: Smart Campus CI/CD
 
 on:
   push:
-    branches: [ main, master, develop, dev, '*' ]
+    branches:
+      - main
+      - master
+      - develop
+      - dev
+      - 'Maintenance-&-Incident-Ticketing'
   pull_request:
-    branches: [ main, master, dev ]
+    branches:
+      - main
+      - dev
 
 jobs:
   backend-build:
