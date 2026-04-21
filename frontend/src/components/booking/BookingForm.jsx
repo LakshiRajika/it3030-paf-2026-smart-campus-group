@@ -3,15 +3,16 @@ import { X, Calendar, Clock, Users, FileText, AlertCircle, CheckCircle, Loader }
 import bookingService from '../../services/bookingService';
 import resourceService from '../../services/resourceService';
 
-const BookingForm = ({ onClose, onSuccess }) => {
+const BookingForm = ({ onClose, onSuccess, existingBooking = null }) => {
+    const isEditMode = !!existingBooking;
     const [resources, setResources] = useState([]);
     const [form, setForm] = useState({
-        resourceId: '',
-        date: '',
-        startTime: '',
-        endTime: '',
-        purpose: '',
-        expectedAttendees: '',
+        resourceId: existingBooking?.resourceId || '',
+        date: existingBooking?.date || '',
+        startTime: existingBooking?.startTime ? existingBooking.startTime.slice(0, 5) : '',
+        endTime: existingBooking?.endTime ? existingBooking.endTime.slice(0, 5) : '',
+        purpose: existingBooking?.purpose || '',
+        expectedAttendees: existingBooking?.expectedAttendees || '',
     });
     const [errors, setErrors] = useState({});
     const [submitting, setSubmitting] = useState(false);
@@ -116,9 +117,13 @@ const BookingForm = ({ onClose, onSuccess }) => {
                 purpose: form.purpose,
                 expectedAttendees: form.expectedAttendees ? parseInt(form.expectedAttendees) : null,
             };
-            console.log('Submitting booking payload:', payload);
-            const created = await bookingService.createBooking(payload);
-            onSuccess(created);
+            let result;
+            if (isEditMode) {
+                result = await bookingService.updateBooking(existingBooking.id, payload);
+            } else {
+                result = await bookingService.createBooking(payload);
+            }
+            onSuccess(result);
         } catch (err) {
             console.error('Booking failed:', err);
             const msg = err?.response?.data?.message || err?.message || 'Failed to create booking. Please try again.';
@@ -136,8 +141,12 @@ const BookingForm = ({ onClose, onSuccess }) => {
                 {/* Header */}
                 <div className="flex items-center justify-between p-6 border-b border-slate-100">
                     <div>
-                        <h2 className="text-xl font-bold text-slate-900">New Booking Request</h2>
-                        <p className="text-sm text-slate-500 mt-0.5">Fill in the details to request a resource</p>
+                        <h2 className="text-xl font-bold text-slate-900">
+                            {isEditMode ? 'Edit Booking' : 'New Booking Request'}
+                        </h2>
+                        <p className="text-sm text-slate-500 mt-0.5">
+                            {isEditMode ? 'Update your pending booking details' : 'Fill in the details to request a resource'}
+                        </p>
                     </div>
                     <button onClick={onClose} className="p-2 rounded-lg hover:bg-slate-100 transition-colors">
                         <X size={20} className="text-slate-500" />
@@ -309,10 +318,10 @@ const BookingForm = ({ onClose, onSuccess }) => {
                             {submitting ? (
                                 <>
                                     <Loader size={16} className="animate-spin" />
-                                    Submitting...
+                                    {isEditMode ? 'Saving...' : 'Submitting...'}
                                 </>
                             ) : (
-                                'Submit Request'
+                                isEditMode ? 'Save Changes' : 'Submit Request'
                             )}
                         </button>
                     </div>

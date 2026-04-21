@@ -136,6 +136,71 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
+    public BookingResponse updateBooking(String bookingId, BookingRequest request, String userId) {
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new ResourceNotFoundException("Booking not found with id: " + bookingId));
+
+        // Only the booking owner can edit
+        if (!booking.getUser().getId().equals(userId)) {
+            throw new UnauthorizedException("You are not authorized to edit this booking");
+        }
+
+        // Only PENDING bookings can be edited
+        if (booking.getStatus() != BookingStatus.PENDING) {
+            throw new ValidationException("Only PENDING bookings can be edited. Current status: " + booking.getStatus());
+        }
+
+        // Validate time range
+        if (!request.getEndTime().isAfter(request.getStartTime())) {
+            throw new ValidationException("End time must be after start time");
+        }
+
+        // Validate date
+        LocalDate today = LocalDate.now();
+        if (request.getDate().isBefore(today)) {
+            throw new ValidationException("Booking date cannot be in the past");
+        }
+        if (request.getDate().equals(today)) {
+            if (request.getStartTime().isBefore(LocalTime.now().minusMinutes(30))) {
+                throw new ValidationException("Start time is too far in the past");
+            }
+        }
+
+        // Fetch resource (allow changing resource)
+        Resource resource = resourceRepository.findById(request.getResourceId())
+                .orElseThrow(() -> new ResourceNotFoundException("Resource not found with id: " + request.getResourceId()));
+
+        if (resource.getStatus() != ResourceStatus.ACTIVE) {
+            throw new ValidationException("Resource is not available for booking (status: " + resource.getStatus() + ")");
+        }
+
+        // Validate attendees vs capacity
+        if (request.getExpectedAttendees() != null && resource.getCapacity() != null) {
+            if (request.getExpectedAttendees() > resource.getCapacity()) {
+                throw new ValidationException("Expected attendees (" + request.getExpectedAttendees() +
+                        ") exceeds resource capacity (" + resource.getCapacity() + ")");
+            }
+        }
+
+        // Check conflict — exclude this booking from the check
+        if (hasConflict(request.getResourceId(), request.getDate(),
+                request.getStartTime(), request.getEndTime(), bookingId)) {
+            throw new ConflictException("The requested time slot conflicts with an existing booking for this resource");
+        }
+
+        // Apply updates
+        booking.setResource(resource);
+        booking.setDate(request.getDate());
+        booking.setStartTime(request.getStartTime());
+        booking.setEndTime(request.getEndTime());
+        booking.setPurpose(request.getPurpose());
+        booking.setExpectedAttendees(request.getExpectedAttendees());
+
+        Booking saved = bookingRepository.save(booking);
+        return toResponse(saved);
+    }
+
+    @Override
     public List<BookingResponse> getMyBookings(String userId) {
         return bookingRepository.findByUserId(userId)
                 .stream()
@@ -325,6 +390,13 @@ public class BookingServiceImpl implements BookingService {
                     resourceId, date, startTime, endTime);
         }
         return !conflicts.isEmpty();
+    }
+
+    @Override
+    public void deleteBooking(String bookingId) {
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new ResourceNotFoundException("Booking not found with id: " + bookingId));
+        bookingRepository.delete(booking);
     }
 
     // ─── Helpers ─────────────────────────────────────────────────────────────────

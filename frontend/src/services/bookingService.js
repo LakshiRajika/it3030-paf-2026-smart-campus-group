@@ -33,6 +33,16 @@ const bookingService = {
     },
 
     /**
+     * Update an existing PENDING booking (owner only)
+     */
+    updateBooking: async (id, bookingData) => {
+        const response = await axios.put(`${API_URL}/bookings/${id}`, bookingData, {
+            headers: authHeaders(),
+        });
+        return response.data;
+    },
+
+    /**
      * Get own bookings (optionally filter by status)
      */
     getMyBookings: async (status = null) => {

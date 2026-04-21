@@ -37,6 +37,7 @@ const Bookings = () => {
     const [viewMode, setViewMode] = useState('cards'); // 'cards' | 'list' | 'calendar'
     const [showForm, setShowForm] = useState(false);
     const [selectedBooking, setSelectedBooking] = useState(null);
+    const [editingBooking, setEditingBooking] = useState(null);
 
     const fetchBookings = useCallback(async () => {
         setLoading(true);
@@ -68,6 +69,7 @@ const Bookings = () => {
 
     const handleCreated = (nb) => { setBookings(p => [nb, ...p]); setShowForm(false); };
     const handleUpdated = (ub) => setBookings(p => p.map(b => b.id === ub.id ? ub : b));
+    const handleEdited = (ub) => { handleUpdated(ub); setEditingBooking(null); };
 
     const handleCancel = async (id) => {
         if (!window.confirm('Cancel this booking?')) return;
@@ -227,6 +229,7 @@ const Bookings = () => {
                             booking={b}
                             isAdmin={isAdmin}
                             onCancel={handleCancel}
+                            onEdit={(booking) => setEditingBooking(booking)}
                             onViewDetail={setSelectedBooking}
                         />
                     ))}
@@ -236,6 +239,13 @@ const Bookings = () => {
             {/* Modals */}
             {showForm && (
                 <BookingForm onClose={() => setShowForm(false)} onSuccess={handleCreated} />
+            )}
+            {editingBooking && (
+                <BookingForm
+                    existingBooking={editingBooking}
+                    onClose={() => setEditingBooking(null)}
+                    onSuccess={handleEdited}
+                />
             )}
             {selectedBooking && (
                 <BookingDetail

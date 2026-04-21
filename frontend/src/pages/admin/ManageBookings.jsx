@@ -65,6 +65,16 @@ const ManageBookings = () => {
         setBookings(prev => prev.map(b => b.id === updated.id ? updated : b));
     };
 
+    const handleDelete = async (id) => {
+        if (!window.confirm('Are you sure you want to completely delete this booking? This action cannot be undone.')) return;
+        try {
+            await bookingService.deleteBooking(id);
+            setBookings(prev => prev.filter(b => b.id !== id));
+        } catch (err) {
+            alert(err?.response?.data?.message || 'Delete failed.');
+        }
+    };
+
     const pendingCount = bookings.filter(b => b.status === 'PENDING').length;
 
     return (
@@ -179,6 +189,7 @@ const ManageBookings = () => {
                                 booking={booking}
                                 isAdmin={true}
                                 onViewDetail={setSelectedBooking}
+                                onDelete={handleDelete}
                             />
                         ))}
                     </div>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Calendar, Clock, Users, MapPin, CheckCircle, XCircle, Clock3, Ban, ChevronRight } from 'lucide-react';
+import { Calendar, Clock, Users, MapPin, CheckCircle, XCircle, Clock3, Ban, ChevronRight, Pencil, Trash2 } from 'lucide-react';
 
 const STATUS_CONFIG = {
     PENDING: { label: 'Pending', color: 'bg-amber-100 text-amber-700 border-amber-200', icon: Clock3 },
@@ -8,7 +8,7 @@ const STATUS_CONFIG = {
     CANCELLED: { label: 'Cancelled', color: 'bg-slate-100 text-slate-500 border-slate-200', icon: Ban },
 };
 
-const BookingCard = ({ booking, onCancel, onViewDetail, isAdmin }) => {
+const BookingCard = ({ booking, onCancel, onViewDetail, onEdit, onDelete, isAdmin }) => {
     const config = STATUS_CONFIG[booking.status] || STATUS_CONFIG.PENDING;
     const StatusIcon = config.icon;
 
@@ -99,12 +99,34 @@ const BookingCard = ({ booking, onCancel, onViewDetail, isAdmin }) => {
                         View Details
                         <ChevronRight size={14} />
                     </button>
+                    {/* Edit button: only for PENDING bookings owned by the user (not admin view) */}
+                    {booking.status === 'PENDING' && !isAdmin && (
+                        <button
+                            onClick={() => onEdit && onEdit(booking)}
+                            className="px-3 py-2 rounded-xl border border-indigo-200 text-indigo-600 text-xs font-semibold hover:bg-indigo-50 transition-colors"
+                            title="Edit booking"
+                        >
+                            <Pencil size={14} />
+                        </button>
+                    )}
+                    {/* Cancel button: for PENDING/APPROVED bookings (user only) */}
                     {canCancel && !isAdmin && (
                         <button
                             onClick={() => onCancel && onCancel(booking.id)}
                             className="px-3 py-2 rounded-xl border border-red-200 text-red-600 text-xs font-semibold hover:bg-red-50 transition-colors"
+                            title="Cancel booking"
                         >
                             Cancel
+                        </button>
+                    )}
+                    {/* Delete button: admin only */}
+                    {isAdmin && (
+                        <button
+                            onClick={() => onDelete && onDelete(booking.id)}
+                            className="px-3 py-2 rounded-xl border border-red-200 text-red-600 text-xs font-semibold hover:bg-red-50 transition-colors"
+                            title="Delete booking"
+                        >
+                            <Trash2 size={14} />
                         </button>
                     )}
                 </div>
