@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
-  PieChart, Pie, Cell, LineChart, Line
+  PieChart, Pie, Cell
 } from 'recharts';
 import bookingService from '../../services/bookingService';
 import { 
-    LayoutDashboard, Users, Calendar, CheckCircle, TrendingUp, 
+    Users, Calendar, CheckCircle, TrendingUp, 
     Download, ArrowLeft, Loader, BarChart3, PieChart as PieChartIcon
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
