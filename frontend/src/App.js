@@ -14,6 +14,8 @@ import Bookings from './pages/Bookings';
 import ManageBookings from './pages/admin/ManageBookings';
 import ManageTickets from './pages/admin/ManageTickets';
 import ManageResources from './pages/admin/ManageResources';
+import ManageUsers from './pages/admin/ManageUsers';
+import TechnicianTasks from './pages/TechnicianTasks';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import NotificationDropdown from './components/Notifications/NotificationDropdown';
 import './index.css';
@@ -47,6 +49,9 @@ const Layout = ({ children }) => {
                 <NavLink to="/tickets" className={({ isActive }) => `font-semibold transition-all ${isActive ? 'text-indigo-600 border-b-2 border-indigo-600 pb-1' : 'text-slate-500 hover:text-indigo-600'}`}>Tickets</NavLink>
                 <NavLink to="/facilities" className={({ isActive }) => `font-semibold transition-all ${isActive ? 'text-indigo-600 border-b-2 border-indigo-600 pb-1' : 'text-slate-500 hover:text-indigo-600'}`}>Facilities</NavLink>
                 <NavLink to="/bookings" className={({ isActive }) => `font-semibold transition-all ${isActive ? 'text-indigo-600 border-b-2 border-indigo-600 pb-1' : 'text-slate-500 hover:text-indigo-600'}`}>Bookings</NavLink>
+                {hasRole('TECHNICIAN') && (
+                  <NavLink to="/technician/tasks" className={({ isActive }) => `font-semibold transition-all ${isActive ? 'text-indigo-600 border-b-2 border-indigo-600 pb-1' : 'text-slate-500 hover:text-indigo-600'}`}>My Tasks</NavLink>
+                )}
               </>
             )}
             {isAdmin && (
@@ -54,6 +59,7 @@ const Layout = ({ children }) => {
                 <NavLink to="/admin/resources" className={({ isActive }) => `font-semibold transition-all ${isActive ? 'text-indigo-600 border-b-2 border-indigo-600 pb-1' : 'text-slate-500 hover:text-indigo-600'}`}>Manage Resources</NavLink>
                 <NavLink to="/admin/bookings" className={({ isActive }) => `font-semibold transition-all ${isActive ? 'text-indigo-600 border-b-2 border-indigo-600 pb-1' : 'text-slate-500 hover:text-indigo-600'}`}>Manage Bookings</NavLink>
                 <NavLink to="/admin/tickets" className={({ isActive }) => `font-semibold transition-all ${isActive ? 'text-indigo-600 border-b-2 border-indigo-600 pb-1' : 'text-slate-500 hover:text-indigo-600'}`}>Manage Tickets</NavLink>
+                <NavLink to="/admin/users" className={({ isActive }) => `font-semibold transition-all ${isActive ? 'text-indigo-600 border-b-2 border-indigo-600 pb-1' : 'text-slate-500 hover:text-indigo-600'}`}>Manage Users</NavLink>
               </>
             )}
           </nav>
@@ -163,9 +169,20 @@ function App() {
               </ProtectedRoute>
             } />
 
+            <Route path="/admin/users" element={
+              <ProtectedRoute roles={['ADMIN', 'MANAGER']}>
+                <ManageUsers />
+              </ProtectedRoute>
+            } />
+
             <Route path="/facilities" element={
               <ProtectedRoute roles={['USER', 'TECHNICIAN', 'MANAGER', 'ADMIN']}>
                 <ResourceCatalogue />
+              </ProtectedRoute>
+            } />
+            <Route path="/technician/tasks" element={
+              <ProtectedRoute roles={['TECHNICIAN']}>
+                <TechnicianTasks />
               </ProtectedRoute>
             } />
           </Routes>

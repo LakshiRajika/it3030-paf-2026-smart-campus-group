@@ -26,8 +26,8 @@ const StatusBadge = ({ status }) => {
   );
 };
 
-const TicketForm = ({ onSubmit, isLoading }) => {
-  const [formData, setFormData] = useState({
+const TicketForm = ({ onSubmit, isLoading, initialData }) => {
+  const [formData, setFormData] = useState(initialData || {
     location: '',
     description: '',
     category: 'FACILITY',
@@ -214,7 +214,7 @@ const TicketForm = ({ onSubmit, isLoading }) => {
         ) : (
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
         )}
-        Submit Incident Report
+        {initialData ? 'Update Incident Report' : 'Submit Incident Report'}
       </button>
     </form>
   );

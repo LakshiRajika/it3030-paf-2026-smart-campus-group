@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import ticketService from '../../services/ticketService';
 import { StatusBadge } from '../../components/ticket/TicketForm';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
+import { BarChart3 } from 'lucide-react';
 
 const ManageTickets = () => {
   const [tickets, setTickets] = useState([]);
@@ -37,18 +38,28 @@ const ManageTickets = () => {
           <p className="text-slate-500 text-sm">Monitor and assign campus maintenance requests.</p>
         </div>
         
-        <div className="flex gap-2 bg-white p-1 rounded-xl shadow-sm border border-slate-200">
-          {['ALL', 'OPEN', 'IN_PROGRESS', 'RESOLVED'].map((f) => (
-            <button
-              key={f}
-              onClick={() => setFilter(f)}
-              className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                filter === f ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'
-              }`}
-            >
-              {f}
-            </button>
-          ))}
+        <div className="flex flex-wrap items-center gap-4">
+          <div className="flex gap-2 bg-white p-1 rounded-xl shadow-sm border border-slate-200">
+            {['ALL', 'OPEN', 'IN_PROGRESS', 'RESOLVED'].map((f) => (
+              <button
+                key={f}
+                onClick={() => setFilter(f)}
+                className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                  filter === f ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'
+                }`}
+              >
+                {f}
+              </button>
+            ))}
+          </div>
+          
+          <Link 
+            to="/admin/analytics" 
+            className="bg-slate-900 text-white px-4 py-2 rounded-xl hover:bg-slate-800 transition-all flex items-center gap-2 shadow-sm font-bold text-sm"
+          >
+            <BarChart3 className="w-4 h-4" />
+            Analytics
+          </Link>
         </div>
       </div>
 

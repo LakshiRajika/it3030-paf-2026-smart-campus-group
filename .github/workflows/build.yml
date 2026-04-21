@@ -1,0 +1,12 @@
+name: Status Check
+
+on:
+  push:
+    branches: [ main, dev ]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: System Check
+        run: echo "Build system ready"

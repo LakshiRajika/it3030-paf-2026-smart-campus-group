@@ -85,11 +85,18 @@ public class TicketController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('MANAGER') or hasRole('TECHNICIAN')")
     public ResponseEntity<Ticket> updateTicket(
             @PathVariable String id,
             @RequestBody TicketUpdateDto request) {
         return ResponseEntity.ok(ticketService.updateTicketStatus(id, request));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteTicket(
+            @PathVariable String id,
+            @RequestParam(required = false) String userId) {
+        ticketService.deleteTicket(id, userId);
+        return ResponseEntity.ok().build();
     }
 
     @GetMapping("/assigned/{technicianId}")
