@@ -8,6 +8,7 @@ import BookingList from '../components/booking/BookingList';
 import CalendarView from '../components/booking/CalendarView';
 import BookingForm from '../components/booking/BookingForm';
 import BookingDetail from '../components/booking/BookingDetail';
+import ConfirmModal from '../components/ConfirmModal';
 import bookingService from '../services/bookingService';
 import { useAuth } from '../hooks/useAuth';
 
@@ -38,6 +39,7 @@ const Bookings = () => {
     const [showForm, setShowForm] = useState(false);
     const [selectedBooking, setSelectedBooking] = useState(null);
     const [editingBooking, setEditingBooking] = useState(null);
+    const [cancellingId, setCancellingId] = useState(null);
 
     const fetchBookings = useCallback(async () => {
         setLoading(true);
@@ -71,11 +73,12 @@ const Bookings = () => {
     const handleUpdated = (ub) => setBookings(p => p.map(b => b.id === ub.id ? ub : b));
     const handleEdited = (ub) => { handleUpdated(ub); setEditingBooking(null); };
 
-    const handleCancel = async (id) => {
-        if (!window.confirm('Cancel this booking?')) return;
+    const handleCancel = async () => {
+        if (!cancellingId) return;
         try {
-            const updated = await bookingService.cancelBooking(id);
+            const updated = await bookingService.cancelBooking(cancellingId);
             handleUpdated(updated);
+            setCancellingId(null);
         } catch (err) {
             alert(err?.response?.data?.message || 'Cancel failed.');
         }
@@ -219,7 +222,7 @@ const Bookings = () => {
                     bookings={filtered}
                     isAdmin={isAdmin}
                     onViewDetail={setSelectedBooking}
-                    onCancel={handleCancel}
+                    onCancel={(id) => setCancellingId(id)}
                 />
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -228,7 +231,7 @@ const Bookings = () => {
                             key={b.id}
                             booking={b}
                             isAdmin={isAdmin}
-                            onCancel={handleCancel}
+                            onCancel={(id) => setCancellingId(id)}
                             onEdit={(booking) => setEditingBooking(booking)}
                             onViewDetail={setSelectedBooking}
                         />
@@ -253,6 +256,18 @@ const Bookings = () => {
                     isAdmin={isAdmin}
                     onClose={() => setSelectedBooking(null)}
                     onUpdated={(u) => { handleUpdated(u); setSelectedBooking(u); }}
+                />
+            )}
+            
+            {/* Cancel Confirmation Modal */}
+            {cancellingId && (
+                <ConfirmModal
+                    title="Cancel Booking"
+                    message="Are you sure you want to cancel this booking request?"
+                    confirmText="Yes, Cancel"
+                    onConfirm={handleCancel}
+                    onClose={() => setCancellingId(null)}
+                    variant="warning"
                 />
             )}
         </div>
