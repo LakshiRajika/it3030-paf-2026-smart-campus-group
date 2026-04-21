@@ -1,0 +1,37 @@
+name: Build and Test
+
+on:
+  push:
+    branches: [ '**' ]
+  pull_request:
+    branches: [ '**' ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+      - name: Build and Test Backend
+        run: |
+          cd backend
+          chmod +x mvnw
+          ./mvnw clean package
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: frontend/package.json
+      - name: Build and Test Frontend
+        run: |
+          cd frontend
+          npm install
+          npm run build
+          npm test -- --watchAll=false --passWithNoTests
