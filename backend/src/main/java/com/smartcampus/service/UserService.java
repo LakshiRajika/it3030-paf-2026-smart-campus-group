@@ -8,4 +8,5 @@ public interface UserService {
     User getUserById(String id);
     List<User> getAllUsers();
     User updateRoles(String id, java.util.Set<com.smartcampus.model.enums.UserRole> roles);
+    void deleteUser(String id);
 }

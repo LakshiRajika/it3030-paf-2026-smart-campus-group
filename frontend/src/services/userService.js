@@ -9,6 +9,11 @@ const userService = {
     updateUserRoles: async (userId, roles) => {
         const response = await api.put(`/users/${userId}/roles`, roles);
         return response.data;
+    },
+    
+    deleteUser: async (userId) => {
+        const response = await api.delete(`/users/${userId}`);
+        return response.data;
     }
 };
 

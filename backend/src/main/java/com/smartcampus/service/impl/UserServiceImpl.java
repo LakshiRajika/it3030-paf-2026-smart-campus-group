@@ -40,4 +40,10 @@ public class UserServiceImpl implements UserService {
         user.setRoles(roles);
         return userRepository.save(user);
     }
+
+    @Override
+    public void deleteUser(String id) {
+        User user = getUserById(id);
+        userRepository.delete(user);
+    }
 }

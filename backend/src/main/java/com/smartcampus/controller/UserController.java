@@ -37,4 +37,11 @@ public class UserController {
     public ResponseEntity<User> updateRoles(@org.springframework.web.bind.annotation.PathVariable String id, @org.springframework.web.bind.annotation.RequestBody java.util.Set<com.smartcampus.model.enums.UserRole> roles) {
         return ResponseEntity.ok(userService.updateRoles(id, roles));
     }
+
+    @org.springframework.web.bind.annotation.DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('MANAGER')")
+    public ResponseEntity<Void> deleteUser(@org.springframework.web.bind.annotation.PathVariable String id) {
+        userService.deleteUser(id);
+        return ResponseEntity.noContent().build();
+    }
 }
