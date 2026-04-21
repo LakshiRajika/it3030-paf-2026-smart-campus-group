@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import resourceService from "../services/resourceService";
 import ResourceTable from "../components/ResourceTable";
 import ResourceModal from "../components/ResourceModal";
-import DeleteConfirmModal from "../components/DeleteConfirmModal";
+import ConfirmModal from "../components/ConfirmModal";
 import SearchFilter from "../components/SearchFilter";
 import { useAuth } from "../context/AuthContext";
 
@@ -164,10 +164,13 @@ export default function ResourceCatalogue() {
       )}
 
       {isAdmin && showDeleteModal && (
-        <DeleteConfirmModal
-          resourceName={deletingResource?.name}
+        <ConfirmModal
+          title="Delete Resource"
+          message={`Are you sure you want to delete ${deletingResource?.name || "this resource"}? This action cannot be undone.`}
+          confirmText="Delete Now"
           onConfirm={handleDelete}
           onClose={() => setShowDeleteModal(false)}
+          variant="danger"
         />
       )}
     </div>
