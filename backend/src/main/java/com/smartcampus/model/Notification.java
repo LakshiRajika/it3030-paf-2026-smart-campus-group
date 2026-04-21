@@ -21,7 +21,9 @@ public class Notification {
     private String message;
     private NotificationType type;
     private String relatedId; // e.g., bookingId or ticketId
+    @Builder.Default
     private boolean isRead = false;
+    @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
 
     public enum NotificationType {

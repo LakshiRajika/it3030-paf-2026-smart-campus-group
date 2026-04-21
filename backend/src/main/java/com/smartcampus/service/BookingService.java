@@ -22,6 +22,12 @@ public interface BookingService {
     List<BookingResponse> getAllBookingsByResource(String resourceId);
     BookingResponse updateBookingStatus(String bookingId, BookingStatusUpdateRequest request, String adminId);
 
+    // Admin/Technician operations
+    BookingResponse verifyAndCheckIn(String bookingId);
+    
+    // Public operations
+    BookingResponse verifyAndCheckInPublic(String bookingId, String token, String pin);
+
     // Conflict check (also used internally)
     boolean hasConflict(String resourceId, java.time.LocalDate date,
                         java.time.LocalTime startTime, java.time.LocalTime endTime,

@@ -21,6 +21,7 @@ backend/.mvn/wrapper/maven-wrapper.jar
 backend/uploads/
 !backend/uploads/.gitkeep
 backend/src/main/resources/application.properties
+backend/src/main/resources/application-dev.properties
 
 # Frontend (Node/React)
 frontend/node_modules/

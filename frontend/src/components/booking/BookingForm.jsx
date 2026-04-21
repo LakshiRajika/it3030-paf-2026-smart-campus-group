@@ -47,18 +47,49 @@ const BookingForm = ({ onClose, onSuccess }) => {
 
     const validate = () => {
         const e = {};
+        const now = new Date();
+        const localToday = now.toLocaleDateString('en-CA'); // yyyy-mm-dd format
+        const currentTime = now.toTimeString().slice(0, 5); // HH:mm format
+
         if (!form.resourceId) e.resourceId = 'Please select a resource';
-        if (!form.date) e.date = 'Date is required';
-        else if (form.date < new Date().toISOString().split('T')[0])
-            e.date = 'Date must be in the future';
-        if (!form.startTime) e.startTime = 'Start time is required';
-        if (!form.endTime) e.endTime = 'End time is required';
-        else if (form.endTime <= form.startTime) e.endTime = 'End time must be after start time';
-        if (!form.purpose.trim()) e.purpose = 'Purpose is required';
-        else if (form.purpose.trim().length < 5) e.purpose = 'Purpose must be at least 5 characters';
-        if (form.expectedAttendees && form.expectedAttendees < 1)
+        
+        if (!form.date) {
+            e.date = 'Date is required';
+        } else if (form.date < localToday) {
+            e.date = 'Date cannot be in the past';
+        }
+
+        if (!form.startTime) {
+            e.startTime = 'Start time is required';
+        } else if (form.date === localToday) {
+            // Allow 30 mins grace period in frontend too to avoid frustration
+            const thirtyMinsAgo = new Date(now.getTime() - 30 * 60000);
+            const graceTime = thirtyMinsAgo.toTimeString().slice(0, 5);
+            if (form.startTime < graceTime) {
+                e.startTime = 'Start time is too far in the past';
+            }
+        }
+
+        if (!form.endTime) {
+            e.endTime = 'End time is required';
+        } else if (form.endTime <= form.startTime) {
+            e.endTime = 'End time must be after start time';
+        }
+
+        if (!form.purpose.trim()) {
+            e.purpose = 'Purpose is required';
+        } else if (form.purpose.trim().length < 5) {
+            e.purpose = 'Purpose must be at least 5 characters';
+        }
+
+        if (form.expectedAttendees && form.expectedAttendees < 1) {
             e.expectedAttendees = 'Must be at least 1';
-        if (conflictCheck === 'conflict') e.time = 'This time slot is already booked';
+        }
+
+        if (conflictCheck === 'conflict') {
+            e.time = 'This time slot is already booked';
+        }
+        
         return e;
     };
 
@@ -86,10 +117,12 @@ const BookingForm = ({ onClose, onSuccess }) => {
                 purpose: form.purpose,
                 expectedAttendees: form.expectedAttendees ? parseInt(form.expectedAttendees) : null,
             };
+            console.log('Submitting booking payload:', payload);
             const created = await bookingService.createBooking(payload);
             onSuccess(created);
         } catch (err) {
-            const msg = err?.response?.data?.message || 'Failed to create booking. Please try again.';
+            console.error('Booking failed:', err);
+            const msg = err?.response?.data?.message || err?.message || 'Failed to create booking. Please try again.';
             setApiError(msg);
         } finally {
             setSubmitting(false);
@@ -158,7 +191,7 @@ const BookingForm = ({ onClose, onSuccess }) => {
                             type="date"
                             name="date"
                             value={form.date}
-                            min={new Date().toISOString().split('T')[0]}
+                            min={new Date().toLocaleDateString('en-CA')}
                             onChange={handleChange}
                             className={`w-full px-4 py-2.5 rounded-xl border text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all
                 ${errors.date ? 'border-red-400 bg-red-50' : 'border-slate-200'}`}

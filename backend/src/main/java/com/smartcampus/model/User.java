@@ -24,6 +24,7 @@ public class User {
     private String picture;
     private String password;
     private Set<UserRole> roles;
+    @Builder.Default
     private NotificationPreferences notificationPreferences = new NotificationPreferences();
 
     @Data
