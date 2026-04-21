@@ -11,6 +11,7 @@ public interface BookingService {
 
     // User operations
     BookingResponse createBooking(BookingRequest request, String userId);
+    BookingResponse updateBooking(String bookingId, BookingRequest request, String userId);
     BookingResponse cancelBooking(String bookingId, String userId);
     List<BookingResponse> getMyBookings(String userId);
     List<BookingResponse> getMyBookingsByStatus(String userId, BookingStatus status);
@@ -27,6 +28,9 @@ public interface BookingService {
     
     // Public operations
     BookingResponse verifyAndCheckInPublic(String bookingId, String token, String pin);
+
+    // Admin delete
+    void deleteBooking(String bookingId);
 
     // Conflict check (also used internally)
     boolean hasConflict(String resourceId, java.time.LocalDate date,

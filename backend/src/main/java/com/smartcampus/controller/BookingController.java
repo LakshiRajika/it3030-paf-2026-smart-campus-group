@@ -54,6 +54,21 @@ public class BookingController {
     }
 
     /**
+     * PUT /api/bookings/{id}
+     * Edit a PENDING booking (owner only). Can change resource, date, time, purpose, attendees.
+     */
+    @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    public ResponseEntity<BookingResponse> updateBooking(
+            @PathVariable String id,
+            @Valid @RequestBody BookingRequest request,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+
+        BookingResponse response = bookingService.updateBooking(id, request, userDetails.getId());
+        return ResponseEntity.ok(response);
+    }
+
+    /**
      * GET /api/bookings/my
      * Get the authenticated user's own bookings.
      * Optional query param: ?status=PENDING|APPROVED|REJECTED|CANCELLED
@@ -203,10 +218,7 @@ public class BookingController {
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Map<String, String>> deleteBooking(@PathVariable String id) {
-        // Verify it exists first (throws 404 if not)
-        bookingService.getBookingById(id, null, true);
-        // Note: actual delete would be: bookingRepository.deleteById(id)
-        // Wired through service for cleanliness
+        bookingService.deleteBooking(id);
         return ResponseEntity.ok(Map.of("message", "Booking deleted successfully", "id", id));
     }
 }

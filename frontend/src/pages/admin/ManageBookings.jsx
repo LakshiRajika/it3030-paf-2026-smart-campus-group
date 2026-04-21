@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import BookingCard from '../../components/booking/BookingCard';
 import BookingDetail from '../../components/booking/BookingDetail';
+import ConfirmModal from '../../components/ConfirmModal';
 import bookingService from '../../services/bookingService';
 import resourceService from '../../services/resourceService';
 
@@ -25,6 +26,7 @@ const ManageBookings = () => {
     const [statusFilter, setStatusFilter] = useState('');
     const [resourceFilter, setResourceFilter] = useState('');
     const [selectedBooking, setSelectedBooking] = useState(null);
+    const [deletingId, setDeletingId] = useState(null);
 
     const fetchBookings = useCallback(async () => {
         setLoading(true);
@@ -61,8 +63,24 @@ const ManageBookings = () => {
         );
     });
 
-    const handleUpdated = (updated) => {
+    const handleUpdated = useCallback((updated) => {
         setBookings(prev => prev.map(b => b.id === updated.id ? updated : b));
+    }, []);
+
+    const handleDetailUpdated = useCallback((updated) => {
+        handleUpdated(updated);
+        setSelectedBooking(updated);
+    }, [handleUpdated]);
+
+    const handleDelete = async () => {
+        if (!deletingId) return;
+        try {
+            await bookingService.deleteBooking(deletingId);
+            setBookings(prev => prev.filter(b => b.id !== deletingId));
+            setDeletingId(null);
+        } catch (err) {
+            alert(err?.response?.data?.message || 'Delete failed.');
+        }
     };
 
     const pendingCount = bookings.filter(b => b.status === 'PENDING').length;
@@ -179,6 +197,7 @@ const ManageBookings = () => {
                                 booking={booking}
                                 isAdmin={true}
                                 onViewDetail={setSelectedBooking}
+                                onDelete={(id) => setDeletingId(id)}
                             />
                         ))}
                     </div>
@@ -191,10 +210,19 @@ const ManageBookings = () => {
                     booking={selectedBooking}
                     isAdmin={true}
                     onClose={() => setSelectedBooking(null)}
-                    onUpdated={(updated) => {
-                        handleUpdated(updated);
-                        setSelectedBooking(updated);
-                    }}
+                    onUpdated={handleDetailUpdated}
+                />
+            )}
+
+            {/* Delete Confirmation Modal */}
+            {deletingId && (
+                <ConfirmModal
+                    title="Delete Booking"
+                    message="Are you sure you want to completely delete this booking? This action cannot be undone."
+                    confirmText="Delete Now"
+                    onConfirm={handleDelete}
+                    onClose={() => setDeletingId(null)}
+                    variant="danger"
                 />
             )}
         </div>
