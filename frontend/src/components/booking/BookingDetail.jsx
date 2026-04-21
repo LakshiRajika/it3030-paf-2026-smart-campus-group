@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Calendar, Clock, Users, FileText, MapPin, CheckCircle, XCircle, AlertCircle, Loader, QrCode, RefreshCw } from 'lucide-react';
+import { X, Calendar, Clock, Users, FileText, MapPin, CheckCircle, XCircle, AlertCircle, Loader, QrCode } from 'lucide-react';
 import { QRCodeCanvas } from 'qrcode.react';
 import bookingService from '../../services/bookingService';
 
@@ -15,26 +15,22 @@ const BookingDetail = ({ booking: initialBooking, isAdmin, onClose, onUpdated })
     const [rejectionReason, setRejectionReason] = useState('');
     const [showRejectInput, setShowRejectInput] = useState(false);
     const [loading, setLoading] = useState(false);
-    const [refreshing, setRefreshing] = useState(false);
     const [error, setError] = useState('');
     const [showQR, setShowQR] = useState(false);
 
     // Refresh data on mount to ensure we have the secret token and latest status
     useEffect(() => {
         const refreshData = async () => {
-            setRefreshing(true);
             try {
                 const latest = await bookingService.getBookingById(initialBooking.id);
                 setBooking(latest);
                 if (onUpdated) onUpdated(latest);
             } catch (err) {
                 console.error("Failed to sync booking data:", err);
-            } finally {
-                setRefreshing(false);
             }
         };
         refreshData();
-    }, [initialBooking.id]);
+    }, [initialBooking.id, onUpdated]);
 
     const formatDate = (d) => d ? new Date(d).toLocaleDateString('en-US', {
         weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',

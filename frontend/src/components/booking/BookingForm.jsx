@@ -49,7 +49,6 @@ const BookingForm = ({ onClose, onSuccess }) => {
         const e = {};
         const now = new Date();
         const localToday = now.toLocaleDateString('en-CA'); // yyyy-mm-dd format
-        const currentTime = now.toTimeString().slice(0, 5); // HH:mm format
 
         if (!form.resourceId) e.resourceId = 'Please select a resource';
         
