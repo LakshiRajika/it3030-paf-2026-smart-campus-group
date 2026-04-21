@@ -44,6 +44,14 @@ const ticketService = {
     return response.data;
   },
 
+  // Delete ticket
+  deleteTicket: async (id, userId) => {
+    const response = await api.delete(`/tickets/${id}`, {
+      params: { userId }
+    });
+    return response.data;
+  },
+
   // Add a comment to a ticket
   addComment: async (ticketId, commentData) => {
     const response = await api.post(`/tickets/${ticketId}/comments`, commentData);
@@ -72,6 +80,17 @@ const ticketService = {
   // Get advanced analytics
   getAnalytics: async () => {
     const response = await api.get('/tickets/analytics');
+    return response.data;
+  },
+
+  // Technician assignments
+  getTechnicians: async () => {
+    const response = await api.get('/users/technicians');
+    return response.data;
+  },
+
+  getAssignedTickets: async (technicianId) => {
+    const response = await api.get(`/tickets/assigned/${technicianId}`);
     return response.data;
   }
 };

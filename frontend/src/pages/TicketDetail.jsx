@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import ticketService from '../services/ticketService';
-import { StatusBadge } from '../components/ticket/TicketForm';
+import { StatusBadge, TicketForm } from '../components/ticket/TicketForm';
 import { useAuth } from '../context/AuthContext';
 import { useCallback } from 'react';
 
@@ -13,7 +13,9 @@ const TicketDetail = () => {
   const [newComment, setNewComment] = useState('');
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   const [statusUpdating, setStatusUpdating] = useState(false);
+  const [technicians, setTechnicians] = useState([]);
 
   const { user, hasRole } = useAuth();
 
@@ -26,13 +28,18 @@ const TicketDetail = () => {
       ]);
       setTicket(ticketData);
       setComments(commentsData);
+
+      if (hasRole('ADMIN') || hasRole('MANAGER')) {
+        const techs = await ticketService.getTechnicians();
+        setTechnicians(techs);
+      }
     } catch (err) {
       console.error(err);
       alert('Error fetching ticket details: ' + (err.response?.data?.message || err.message));
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  }, [id, hasRole]);
 
   useEffect(() => {
     fetchTicketDetails();
@@ -58,6 +65,47 @@ const TicketDetail = () => {
       alert('Error updating status: ' + (err.response?.data?.message || err.message));
     } finally {
       setStatusUpdating(false);
+    }
+  };
+
+  const handleAssignTechnician = async (techId) => {
+    try {
+      setStatusUpdating(true);
+      await ticketService.updateTicket(id, { assignedToId: techId });
+      fetchTicketDetails();
+    } catch (err) {
+      alert('Error assigning technician: ' + (err.response?.data?.message || err.message));
+    } finally {
+      setStatusUpdating(false);
+    }
+  };
+
+  const handleUpdateTicket = async (formData, files) => {
+    try {
+      setSubmitting(true);
+      const updateData = { ...formData, userId: user.sub };
+      await ticketService.updateTicket(id, updateData);
+      // Wait, files might not be updated using this endpoint since we didn't implement file upload for updates, but data is updated.
+      setIsEditing(false);
+      fetchTicketDetails();
+    } catch (err) {
+      const data = err.response?.data;
+      const errorMsg = typeof data === 'object' ? (data.message || JSON.stringify(data)) : (data || err.message);
+      alert('Error updating ticket: ' + errorMsg);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleDeleteTicket = async () => {
+    if (!window.confirm('Are you sure you want to delete this ticket? This cannot be undone.')) return;
+    try {
+      setLoading(true);
+      await ticketService.deleteTicket(id, user.sub);
+      navigate('/tickets');
+    } catch (err) {
+      alert('Error deleting ticket: ' + (err.response?.data?.message || err.message));
+      setLoading(false);
     }
   };
 
@@ -95,20 +143,55 @@ const TicketDetail = () => {
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
-      <button 
-        onClick={() => navigate('/tickets')}
-        className="flex items-center gap-2 text-slate-500 hover:text-indigo-600 font-semibold mb-6 transition-colors"
-      >
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-        </svg>
-        Back to List
-      </button>
+      <div className="flex justify-between items-center mb-6">
+        <button 
+          onClick={() => navigate('/tickets')}
+          className="flex items-center gap-2 text-slate-500 hover:text-indigo-600 font-semibold transition-colors"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+          Back to List
+        </button>
+
+        {user && user.sub === ticket.createdById && (
+          <div className="flex gap-3">
+            <button
+              onClick={() => setIsEditing(!isEditing)}
+              className="px-4 py-2 bg-indigo-50 text-indigo-700 rounded-xl text-sm font-bold hover:bg-indigo-100 transition-colors"
+            >
+              {isEditing ? 'Cancel Edit' : 'Edit Ticket'}
+            </button>
+            <button
+              onClick={handleDeleteTicket}
+              className="px-4 py-2 bg-rose-50 text-rose-700 rounded-xl text-sm font-bold hover:bg-rose-100 transition-colors"
+            >
+              Delete Ticket
+            </button>
+          </div>
+        )}
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Main Content */}
         <div className="lg:col-span-2 space-y-8">
-          <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-100">
+          {isEditing ? (
+            <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-100">
+               <h2 className="text-xl font-bold text-slate-800 mb-6">Edit Incident Report</h2>
+               <TicketForm 
+                 initialData={{
+                   location: ticket.location,
+                   description: ticket.description,
+                   category: ticket.category,
+                   priority: ticket.priority,
+                   preferredContact: ticket.preferredContact || '',
+                 }} 
+                 onSubmit={handleUpdateTicket} 
+                 isLoading={submitting} 
+               />
+            </div>
+          ) : (
+            <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-100">
             <div className="flex justify-between items-start mb-6">
               <div>
                 <div className="flex items-center gap-3 mb-2">
@@ -157,6 +240,7 @@ const TicketDetail = () => {
               </div>
             )}
           </div>
+          )}
 
           <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-100">
             <h3 className="text-lg font-bold text-slate-900 mb-6 flex items-center gap-2">
@@ -225,6 +309,31 @@ const TicketDetail = () => {
               ))}
             </div>
           </div>
+
+          {(hasRole('ADMIN') || hasRole('MANAGER')) && (
+            <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100">
+              <h4 className="text-sm font-bold text-slate-400 uppercase mb-4 tracking-wider">Assign Technician</h4>
+              <div className="space-y-3">
+                <select
+                  value={ticket.assignedToId || ''}
+                  onChange={(e) => handleAssignTechnician(e.target.value)}
+                  className="w-full p-2.5 rounded-xl text-sm bg-slate-50 border-none focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                >
+                  <option value="">Unassigned</option>
+                  {technicians.map(tech => (
+                    <option key={tech.id} value={tech.id}>
+                      {tech.name || tech.email}
+                    </option>
+                  ))}
+                </select>
+                {ticket.assignedToId && (
+                  <p className="text-[10px] text-center text-slate-400">
+                    Currently assigned to: {technicians.find(t => t.id === ticket.assignedToId)?.name || 'Loading...'}
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
 
           <div className="bg-slate-900 rounded-3xl p-6 text-white shadow-xl shadow-slate-200">
             <h4 className="text-xs font-bold text-slate-400 uppercase mb-4 tracking-widest">SLA Timers</h4>

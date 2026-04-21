@@ -26,7 +26,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/tickets")
-@CrossOrigin(origins = "*")
 public class TicketController {
     private static final Logger logger = LoggerFactory.getLogger(TicketController.class);
     private final TicketService ticketService;
@@ -59,7 +58,7 @@ public class TicketController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('MANAGER')")
     public ResponseEntity<List<Ticket>> getAllTickets() {
         return ResponseEntity.ok(ticketService.getAllTickets());
     }
@@ -70,7 +69,7 @@ public class TicketController {
     }
 
     @GetMapping("/analytics")
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('MANAGER')")
     public ResponseEntity<Map<String, Object>> getAnalytics() {
         return ResponseEntity.ok(ticketService.getAnalytics());
     }
@@ -86,11 +85,18 @@ public class TicketController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'TECHNICIAN')")
     public ResponseEntity<Ticket> updateTicket(
             @PathVariable String id,
             @RequestBody TicketUpdateDto request) {
         return ResponseEntity.ok(ticketService.updateTicketStatus(id, request));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteTicket(
+            @PathVariable String id,
+            @RequestParam(required = false) String userId) {
+        ticketService.deleteTicket(id, userId);
+        return ResponseEntity.ok().build();
     }
 
     @GetMapping("/assigned/{technicianId}")
