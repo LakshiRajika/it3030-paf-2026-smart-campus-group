@@ -69,9 +69,10 @@ const Bookings = () => {
         );
     });
 
-    const handleCreated = (nb) => { setBookings(p => [nb, ...p]); setShowForm(false); };
-    const handleUpdated = (ub) => setBookings(p => p.map(b => b.id === ub.id ? ub : b));
-    const handleEdited = (ub) => { handleUpdated(ub); setEditingBooking(null); };
+    const handleCreated = useCallback((nb) => { setBookings(p => [nb, ...p]); setShowForm(false); }, []);
+    const handleUpdated = useCallback((ub) => setBookings(p => p.map(b => b.id === ub.id ? ub : b)), []);
+    const handleEdited = useCallback((ub) => { handleUpdated(ub); setEditingBooking(null); }, [handleUpdated]);
+    const handleDetailUpdated = useCallback((u) => { handleUpdated(u); setSelectedBooking(u); }, [handleUpdated]);
 
     const handleCancel = async () => {
         if (!cancellingId) return;
@@ -255,7 +256,7 @@ const Bookings = () => {
                     booking={selectedBooking}
                     isAdmin={isAdmin}
                     onClose={() => setSelectedBooking(null)}
-                    onUpdated={(u) => { handleUpdated(u); setSelectedBooking(u); }}
+                    onUpdated={handleDetailUpdated}
                 />
             )}
             

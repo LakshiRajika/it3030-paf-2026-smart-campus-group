@@ -63,9 +63,14 @@ const ManageBookings = () => {
         );
     });
 
-    const handleUpdated = (updated) => {
+    const handleUpdated = useCallback((updated) => {
         setBookings(prev => prev.map(b => b.id === updated.id ? updated : b));
-    };
+    }, []);
+
+    const handleDetailUpdated = useCallback((updated) => {
+        handleUpdated(updated);
+        setSelectedBooking(updated);
+    }, [handleUpdated]);
 
     const handleDelete = async () => {
         if (!deletingId) return;
@@ -205,10 +210,7 @@ const ManageBookings = () => {
                     booking={selectedBooking}
                     isAdmin={true}
                     onClose={() => setSelectedBooking(null)}
-                    onUpdated={(updated) => {
-                        handleUpdated(updated);
-                        setSelectedBooking(updated);
-                    }}
+                    onUpdated={handleDetailUpdated}
                 />
             )}
 
