@@ -71,6 +71,7 @@ export default function ResourceCatalogue() {
   const [error, setError] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false);
   const [editingResource, setEditingResource] = useState(null);
   const [deletingResource, setDeletingResource] = useState(null);
   const [viewMode, setViewMode] = useState("grid");
@@ -81,6 +82,7 @@ export default function ResourceCatalogue() {
   const [query, setQuery] = useState("");
   const [filters, setFilters] = useState({
     type: "",
+    status: "",
     minCapacity: "",
     location: "",
     date: "",
@@ -92,6 +94,7 @@ export default function ResourceCatalogue() {
     return Boolean(
       query.trim() ||
         filters.type ||
+        filters.status ||
         filters.minCapacity ||
         filters.location.trim() ||
         filters.date ||
@@ -104,6 +107,7 @@ export default function ResourceCatalogue() {
     setQuery("");
     setFilters({
       type: "",
+      status: "",
       minCapacity: "",
       location: "",
       date: "",
@@ -134,6 +138,7 @@ export default function ResourceCatalogue() {
     return resources
       .filter((r) => {
         if (filters.type && r.type !== filters.type) return false;
+        if (filters.status && r.status !== filters.status) return false;
         if (filters.minCapacity && (r.capacity || 0) < Number(filters.minCapacity)) return false;
         if (filters.location && !(r.location || "").toLowerCase().includes(filters.location.toLowerCase())) return false;
         if (filters.from && r.availableFrom && String(r.availableFrom).slice(0, 5) > filters.from) return false;
@@ -280,6 +285,16 @@ export default function ResourceCatalogue() {
     setSelectedIds([]);
   };
 
+  const handleBulkDelete = async () => {
+    const idsToDelete = [...selectedIds];
+    if (idsToDelete.length === 0) return;
+    await Promise.all(idsToDelete.map((id) => resourceService.delete(id)));
+    setResources((prev) => prev.filter((item) => !idsToDelete.includes(item.id)));
+    setAdminFilteredResources((prev) => (prev ? prev.filter((item) => !idsToDelete.includes(item.id)) : prev));
+    setSelectedIds([]);
+    setShowBulkDeleteModal(false);
+  };
+
   const handleAdminSearch = async ({ search, type, status, minCapacity }) => {
     try {
       setError(null);
@@ -324,12 +339,17 @@ export default function ResourceCatalogue() {
         <div className="mt-6 space-y-5">
           <div className="bg-white border border-slate-200 rounded-2xl p-4">
             <h2 className="font-bold text-slate-900 mb-3">Smart Filters</h2>
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-6 gap-3">
               <select className="w-full rounded-xl border border-slate-200 px-3 py-2 bg-white" value={filters.type} onChange={(e) => setFilters((p) => ({ ...p, type: e.target.value }))}>
                 <option value="">All types</option>
                 {TYPES.map((t) => (
                   <option key={t} value={t}>{humanize(t)}</option>
                 ))}
+              </select>
+              <select className="w-full rounded-xl border border-slate-200 px-3 py-2 bg-white" value={filters.status} onChange={(e) => setFilters((p) => ({ ...p, status: e.target.value }))}>
+                <option value="">All status</option>
+                <option value="ACTIVE">Available</option>
+                <option value="OUT_OF_SERVICE">Out of service</option>
               </select>
               <input type="number" min="1" className="w-full rounded-xl border border-slate-200 px-3 py-2" placeholder="Min capacity" value={filters.minCapacity} onChange={(e) => setFilters((p) => ({ ...p, minCapacity: e.target.value }))} />
               <input className="w-full rounded-xl border border-slate-200 px-3 py-2" placeholder="Building / location" value={filters.location} onChange={(e) => setFilters((p) => ({ ...p, location: e.target.value }))} />
@@ -453,11 +473,12 @@ export default function ResourceCatalogue() {
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {filtered.map((r) => {
                       const live = getLiveStatus(r.status);
+                      const hasWeeklySlots = Array.isArray(r.weeklySlots) && r.weeklySlots.length > 0;
                       const availabilityLabel =
-                        r.availableFrom && r.availableTo
-                          ? `${String(r.availableFrom).slice(0, 5)}–${String(r.availableTo).slice(0, 5)}`
-                          : Array.isArray(r.weeklySlots) && r.weeklySlots.length > 0
-                            ? "Weekly slots"
+                        hasWeeklySlots
+                          ? "Weekly slots"
+                          : r.availableFrom && r.availableTo
+                            ? `${String(r.availableFrom).slice(0, 5)}–${String(r.availableTo).slice(0, 5)}`
                             : "No window set";
                       return (
                         <Link
@@ -542,6 +563,13 @@ export default function ResourceCatalogue() {
             </select>
             <button className="px-3 py-2 text-sm rounded-xl border border-slate-200 bg-white disabled:opacity-50 disabled:cursor-not-allowed" onClick={() => applyBulkStatus("ACTIVE")} disabled={selectedIds.length < 2}>Bulk Active</button>
             <button className="px-3 py-2 text-sm rounded-xl border border-slate-200 bg-white disabled:opacity-50 disabled:cursor-not-allowed" onClick={() => applyBulkStatus("OUT_OF_SERVICE")} disabled={selectedIds.length < 2}>Bulk Out-of-Service</button>
+            <button
+              className="px-3 py-2 text-sm rounded-xl border border-rose-200 bg-rose-50 text-rose-700 font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-rose-100"
+              onClick={() => setShowBulkDeleteModal(true)}
+              disabled={selectedIds.length < 2}
+            >
+              Bulk Delete
+            </button>
             <button className="px-3 py-2 text-sm rounded-xl border border-slate-200 bg-white" onClick={exportCsv}>Export CSV</button>
             <label className="px-3 py-2 text-sm rounded-xl border border-slate-200 bg-white cursor-pointer">
               Import CSV
@@ -629,6 +657,17 @@ export default function ResourceCatalogue() {
             setShowDeleteModal(false);
           }}
           onClose={() => setShowDeleteModal(false)}
+          variant="danger"
+        />
+      )}
+
+      {isAdmin && showBulkDeleteModal && (
+        <ConfirmModal
+          title="Bulk Delete Resources"
+          message={`Are you sure you want to delete ${selectedIds.length} selected resources? This action cannot be undone.`}
+          confirmText="Delete Selected"
+          onConfirm={handleBulkDelete}
+          onClose={() => setShowBulkDeleteModal(false)}
           variant="danger"
         />
       )}
