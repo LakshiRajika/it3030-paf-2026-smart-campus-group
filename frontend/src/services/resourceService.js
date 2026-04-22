@@ -17,11 +17,19 @@ const resourceService = {
   },
 
   create: async (data) => {
+    if (data instanceof FormData) {
+      const response = await api.post('/v1/resources/with-image', data);
+      return response.data;
+    }
     const response = await api.post('/v1/resources', data);
     return response.data;
   },
 
   update: async (id, data) => {
+    if (data instanceof FormData) {
+      const response = await api.put(`/v1/resources/${id}/with-image`, data);
+      return response.data;
+    }
     const response = await api.put(`/v1/resources/${id}`, data);
     return response.data;
   },

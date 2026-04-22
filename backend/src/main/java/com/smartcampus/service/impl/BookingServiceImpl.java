@@ -10,6 +10,7 @@ import com.smartcampus.exception.ValidationException;
 import com.smartcampus.model.Booking;
 import com.smartcampus.model.Resource;
 import com.smartcampus.model.User;
+import com.smartcampus.model.WeeklySlot;
 import com.smartcampus.model.enums.BookingStatus;
 import com.smartcampus.model.enums.ResourceStatus;
 import com.smartcampus.repository.BookingRepository;
@@ -23,6 +24,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -80,6 +82,7 @@ public class BookingServiceImpl implements BookingService {
         if (resource.getStatus() != ResourceStatus.ACTIVE) {
             throw new ValidationException("Resource is not available for booking (status: " + resource.getStatus() + ")");
         }
+        validateResourceAvailabilityWindow(resource, request.getDate(), request.getStartTime(), request.getEndTime());
 
         // 5. Validate attendees vs capacity
         if (request.getExpectedAttendees() != null && resource.getCapacity() != null) {
@@ -173,6 +176,7 @@ public class BookingServiceImpl implements BookingService {
         if (resource.getStatus() != ResourceStatus.ACTIVE) {
             throw new ValidationException("Resource is not available for booking (status: " + resource.getStatus() + ")");
         }
+        validateResourceAvailabilityWindow(resource, request.getDate(), request.getStartTime(), request.getEndTime());
 
         // Validate attendees vs capacity
         if (request.getExpectedAttendees() != null && resource.getCapacity() != null) {
@@ -255,6 +259,18 @@ public class BookingServiceImpl implements BookingService {
     @Override
     public List<BookingResponse> getAllBookingsByResource(String resourceId) {
         return bookingRepository.findByResourceId(resourceId)
+                .stream()
+                .map(this::ensureTokenExists)
+                .map(this::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<BookingResponse> getUpcomingBookingsByResource(String resourceId, int days) {
+        int safeDays = Math.max(1, Math.min(days, 30));
+        LocalDate start = LocalDate.now();
+        LocalDate end = start.plusDays(safeDays - 1L);
+        return bookingRepository.findUpcomingByResourceAndDateRange(resourceId, start, end)
                 .stream()
                 .map(this::ensureTokenExists)
                 .map(this::toResponse)
@@ -424,6 +440,35 @@ public class BookingServiceImpl implements BookingService {
             return bookingRepository.save(booking);
         }
         return booking;
+    }
+
+    private void validateResourceAvailabilityWindow(Resource resource, LocalDate date, LocalTime requestedStart, LocalTime requestedEnd) {
+        List<WeeklySlot> slots = resource.getWeeklySlots();
+        if (slots != null && !slots.isEmpty()) {
+            String requestedDay = date.getDayOfWeek().name();
+            boolean insideAnySlot = slots.stream()
+                    .filter(slot -> slot != null && requestedDay.equalsIgnoreCase(String.valueOf(slot.getDay())))
+                    .anyMatch(slot -> {
+                        try {
+                            LocalTime slotFrom = LocalTime.parse(slot.getFrom());
+                            LocalTime slotTo = LocalTime.parse(slot.getTo());
+                            return !requestedStart.isBefore(slotFrom) && !requestedEnd.isAfter(slotTo);
+                        } catch (DateTimeParseException ex) {
+                            return false;
+                        }
+                    });
+            if (!insideAnySlot) {
+                throw new ValidationException("Requested time is outside configured weekly slots for " + requestedDay);
+            }
+            return;
+        }
+
+        if (resource.getAvailableFrom() != null && requestedStart.isBefore(resource.getAvailableFrom())) {
+            throw new ValidationException("Start time is before resource available-from time (" + resource.getAvailableFrom() + ")");
+        }
+        if (resource.getAvailableTo() != null && requestedEnd.isAfter(resource.getAvailableTo())) {
+            throw new ValidationException("End time is after resource available-to time (" + resource.getAvailableTo() + ")");
+        }
     }
 
     private BookingResponse toResponse(Booking booking) {

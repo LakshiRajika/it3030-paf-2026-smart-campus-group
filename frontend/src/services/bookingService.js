@@ -101,6 +101,14 @@ const bookingService = {
         return response.data;
     },
 
+    getUpcomingByResource: async (resourceId, days = 7) => {
+        const response = await axios.get(`${API_URL}/bookings/resource/${resourceId}/upcoming`, {
+            headers: authHeaders(),
+            params: { days },
+        });
+        return response.data;
+    },
+
     /**
      * Admin: approve / reject / cancel a booking
      */
