@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import ticketService from '../../services/ticketService';
 import { StatusBadge } from '../../components/ticket/TicketForm';
 import { useNavigate, Link } from 'react-router-dom';
-import { BarChart3, Search, MapPin, AlertCircle, Clock, ChevronRight, User, LayoutGrid, List } from 'lucide-react';
+import { BarChart3, Search, MapPin, AlertCircle, Clock, ChevronRight, LayoutGrid, List } from 'lucide-react';
 
 const ManageTickets = () => {
   const [tickets, setTickets] = useState([]);
