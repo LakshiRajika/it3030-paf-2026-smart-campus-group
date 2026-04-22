@@ -50,7 +50,7 @@ export default function ResourceModal({ resource, onSave, onClose }) {
             from: slot.from || "08:00",
             to: slot.to || "17:00",
           }))
-        : [{ day: "MONDAY", from: "08:00", to: "17:00" }]
+        : []
     );
   }, [resource]);
 
@@ -231,6 +231,15 @@ export default function ResourceModal({ resource, onSave, onClose }) {
                 </button>
               </div>
               <div className="space-y-2">
+                {weeklySlots.length === 0 && (
+                  <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-3">
+                    <p className="text-sm font-semibold text-slate-700">No weekly slots configured.</p>
+                    <p className="text-[11px] text-slate-500 mt-1">
+                      If you want this resource to be available every day, leave weekly slots empty and use the
+                      <span className="font-semibold"> Available from/to</span> fields instead.
+                    </p>
+                  </div>
+                )}
                 {weeklySlots.map((slot, index) => (
                   <div key={`${slot.day}-${index}`} className="grid grid-cols-1 md:grid-cols-4 gap-2 items-center rounded-xl border border-slate-200 p-2">
                     <select
@@ -259,7 +268,7 @@ export default function ResourceModal({ resource, onSave, onClose }) {
                     <button
                       type="button"
                       onClick={() => removeWeeklySlot(index)}
-                      disabled={weeklySlots.length === 1}
+                      disabled={weeklySlots.length === 0}
                       className="px-3 py-2 rounded-lg border border-rose-200 bg-rose-50 text-rose-700 text-xs font-semibold hover:bg-rose-100 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       Remove
@@ -267,7 +276,9 @@ export default function ResourceModal({ resource, onSave, onClose }) {
                   </div>
                 ))}
               </div>
-              <p className="text-[11px] text-slate-500 mt-1">Tip: add one or more weekly windows. Slots with invalid time ranges are ignored.</p>
+              <p className="text-[11px] text-slate-500 mt-1">
+                Tip: weekly slots override the daily window for previews/filters. Slots with invalid time ranges are ignored.
+              </p>
             </div>
           </div>
           </div>
