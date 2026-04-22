@@ -10,6 +10,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalTime;
+import java.util.List;
 
 @Data
 @Builder
@@ -34,4 +35,8 @@ public class Resource {
     private LocalTime availableTo;
 
     private ResourceStatus status;
+
+    private String imageUrl;
+    private List<String> amenities;
+    private List<WeeklySlot> weeklySlots;
 }

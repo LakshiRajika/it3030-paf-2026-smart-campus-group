@@ -8,6 +8,7 @@ import Unauthorized from './pages/Unauthorized';
 import Analytics from './pages/Analytics';
 import OAuth2RedirectHandler from './pages/OAuth2RedirectHandler';
 import ResourceCatalogue from './pages/ResourceCatalogue';
+import ResourceDetail from './pages/ResourceDetail';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import ProtectedRoute from './components/Common/ProtectedRoute';
 import Bookings from './pages/Bookings';
@@ -179,6 +180,11 @@ function App() {
             <Route path="/facilities" element={
               <ProtectedRoute roles={['USER', 'TECHNICIAN', 'MANAGER', 'ADMIN']}>
                 <ResourceCatalogue />
+              </ProtectedRoute>
+            } />
+            <Route path="/facilities/:id" element={
+              <ProtectedRoute roles={['USER', 'TECHNICIAN', 'MANAGER', 'ADMIN']}>
+                <ResourceDetail />
               </ProtectedRoute>
             } />
 
