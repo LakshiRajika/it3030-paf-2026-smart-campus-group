@@ -2,15 +2,18 @@ package com.smartcampus.dto.request;
 
 import com.smartcampus.model.enums.ResourceStatus;
 import com.smartcampus.model.enums.ResourceType;
+import com.smartcampus.model.WeeklySlot;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalTime;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -37,4 +40,9 @@ public class ResourceDTO {
 
     @NotNull(message = "Status is required")
     private ResourceStatus status;
+
+    private String imageUrl;
+    private List<String> amenities;
+    @Valid
+    private List<WeeklySlot> weeklySlots;
 }

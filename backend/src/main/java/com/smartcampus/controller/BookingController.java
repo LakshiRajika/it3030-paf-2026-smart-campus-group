@@ -174,6 +174,14 @@ public class BookingController {
         return ResponseEntity.ok(bookings);
     }
 
+    @GetMapping("/resource/{resourceId}/upcoming")
+    @PreAuthorize("hasAnyRole('USER', 'TECHNICIAN', 'MANAGER', 'ADMIN')")
+    public ResponseEntity<List<BookingResponse>> getUpcomingByResource(
+            @PathVariable String resourceId,
+            @RequestParam(defaultValue = "7") int days) {
+        return ResponseEntity.ok(bookingService.getUpcomingBookingsByResource(resourceId, days));
+    }
+
     /**
      * PATCH /api/bookings/{id}/status
      * Admin reviews a booking: APPROVE, REJECT (with reason), or CANCEL.

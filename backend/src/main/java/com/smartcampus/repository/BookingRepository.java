@@ -28,6 +28,9 @@ public interface BookingRepository extends MongoRepository<Booking, String> {
     // Find bookings by resource
     List<Booking> findByResourceId(String resourceId);
 
+    @Query("{ 'resource.$id': { $oid: ?0 }, 'date': { $gte: ?1, $lte: ?2 }, 'status': { $in: ['PENDING', 'APPROVED'] } }")
+    List<Booking> findUpcomingByResourceAndDateRange(String resourceId, LocalDate fromDate, LocalDate toDate);
+
     /**
      * Conflict detection: find bookings for the same resource and date
      * where the existing booking's time range overlaps with the requested range.
