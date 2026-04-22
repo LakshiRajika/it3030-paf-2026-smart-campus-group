@@ -17,6 +17,7 @@ public class Ticket {
     private String id;
     
     private String createdById;
+    private String createdByName;
     private String location; 
     
     private String description;
@@ -45,6 +46,7 @@ public class Ticket {
         private Ticket ticket = new Ticket();
         public TicketBuilder id(String id) { ticket.id = id; return this; }
         public TicketBuilder createdById(String createdById) { ticket.createdById = createdById; return this; }
+        public TicketBuilder createdByName(String createdByName) { ticket.createdByName = createdByName; return this; }
         public TicketBuilder location(String location) { ticket.location = location; return this; }
         public TicketBuilder description(String description) { ticket.description = description; return this; }
         public TicketBuilder preferredContact(String preferredContact) { ticket.preferredContact = preferredContact; return this; }
@@ -64,6 +66,8 @@ public class Ticket {
     public void setId(String id) { this.id = id; }
     public String getCreatedById() { return createdById; }
     public void setCreatedById(String createdById) { this.createdById = createdById; }
+    public String getCreatedByName() { return createdByName; }
+    public void setCreatedByName(String createdByName) { this.createdByName = createdByName; }
     public String getLocation() { return location; }
     public void setLocation(String location) { this.location = location; }
     public String getDescription() { return description; }

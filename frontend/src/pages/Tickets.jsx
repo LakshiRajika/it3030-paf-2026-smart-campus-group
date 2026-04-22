@@ -24,17 +24,14 @@ const Tickets = () => {
 
   const { user } = useAuth();
 
-  const fetchStats = useCallback(async () => {
-    try {
-      const data = await ticketService.getStats();
-      setStats({
-        active: data.open + data.inProgress,
-        resolved: data.resolved,
-        total: data.total
-      });
-    } catch (err) {
-      console.error("Error fetching stats:", err);
-    }
+  const updateStats = useCallback((ticketList) => {
+    const active = ticketList.filter(t => t.status === 'OPEN' || t.status === 'IN_PROGRESS').length;
+    const resolved = ticketList.filter(t => t.status === 'RESOLVED' || t.status === 'CLOSED').length;
+    setStats({
+      active,
+      resolved,
+      total: ticketList.length
+    });
   }, []);
 
 
@@ -49,18 +46,18 @@ const Tickets = () => {
         data = await ticketService.getMyTickets(user.sub);
       }
       setTickets(data);
+      updateStats(data);
     } catch (err) {
       console.error(err);
       alert('Failed to load tickets. Please try again.');
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user, updateStats]);
 
   useEffect(() => {
     fetchTickets();
-    fetchStats();
-  }, [fetchTickets, fetchStats]);
+  }, [fetchTickets]);
 
   const handleCreateTicket = async (formData, files) => {
     if (!user) {
@@ -70,7 +67,11 @@ const Tickets = () => {
 
     try {
       setIsSubmitting(true);
-      const ticketData = { ...formData, createdById: user.sub };
+      const ticketData = { 
+        ...formData, 
+        createdById: user.sub,
+        createdByName: user.name || user.email?.split('@')[0] || 'Anonymous'
+      };
       await ticketService.createTicket(ticketData, files);
       setShowForm(false);
       fetchTickets();

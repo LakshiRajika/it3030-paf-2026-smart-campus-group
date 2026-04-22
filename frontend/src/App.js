@@ -71,7 +71,7 @@ const Layout = ({ children }) => {
                 <NotificationDropdown />
                 <div className="flex items-center gap-3 ml-4">
                   <div className="text-right hidden sm:block">
-                    <p className="text-xs font-bold text-slate-800">{user.email?.split('@')[0]}</p>
+                    <p className="text-xs font-bold text-slate-800">{user.name || user.email?.split('@')[0]}</p>
                     <button
                       onClick={logout}
                       className="text-[10px] text-indigo-600 hover:text-indigo-800 font-bold uppercase tracking-wider transition-all"
@@ -80,7 +80,7 @@ const Layout = ({ children }) => {
                     </button>
                   </div>
                   <div className="w-10 h-10 rounded-full bg-slate-200 border-2 border-white shadow-sm overflow-hidden cursor-pointer hover:opacity-80 transition-opacity" onClick={logout}>
-                    <img src={`https://ui-avatars.com/api/?name=${user.email}&background=6366f1&color=fff`} alt="User" />
+                    <img src={`https://ui-avatars.com/api/?name=${user.name || user.email}&background=6366f1&color=fff`} alt="User" />
                   </div>
                 </div>
               </>

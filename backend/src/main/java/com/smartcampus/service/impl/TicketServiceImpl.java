@@ -9,6 +9,7 @@ import com.smartcampus.model.TicketComment;
 import com.smartcampus.model.enums.TicketStatus;
 import com.smartcampus.repository.TicketCommentRepository;
 import com.smartcampus.repository.TicketRepository;
+import com.smartcampus.repository.UserRepository;
 import com.smartcampus.service.NotificationService;
 import com.smartcampus.service.TicketService;
 import org.springframework.stereotype.Service;
@@ -30,13 +31,15 @@ public class TicketServiceImpl implements TicketService {
     private final TicketRepository ticketRepository;
     private final TicketCommentRepository commentRepository;
     private final NotificationService notificationService;
+    private final UserRepository userRepository;
     private final String UPLOAD_DIR = "uploads/";
 
     public TicketServiceImpl(TicketRepository ticketRepository, TicketCommentRepository commentRepository,
-            NotificationService notificationService) {
+            NotificationService notificationService, UserRepository userRepository) {
         this.ticketRepository = ticketRepository;
         this.commentRepository = commentRepository;
         this.notificationService = notificationService;
+        this.userRepository = userRepository;
     }
 
     @Override
@@ -52,6 +55,7 @@ public class TicketServiceImpl implements TicketService {
                     .category(request.getCategory())
                     .priority(request.getPriority())
                     .createdById(request.getCreatedById())
+                    .createdByName(request.getCreatedByName())
                     .status(TicketStatus.OPEN)
                     .createdAt(LocalDateTime.now())
                     .updatedAt(LocalDateTime.now())
@@ -95,12 +99,29 @@ public class TicketServiceImpl implements TicketService {
 
     @Override
     public List<Ticket> getAllTickets() {
-        return ticketRepository.findAll();
+        List<Ticket> tickets = ticketRepository.findAll();
+        populateUserNames(tickets);
+        return tickets;
+    }
+
+    private void populateUserNames(List<Ticket> tickets) {
+        tickets.forEach(ticket -> {
+            if (ticket.getCreatedById() != null && (ticket.getCreatedByName() == null || ticket.getCreatedByName().isEmpty())) {
+                try {
+                    userRepository.findById(ticket.getCreatedById())
+                            .ifPresent(user -> ticket.setCreatedByName(user.getName()));
+                } catch (Exception e) {
+                    // Ignore parsing errors for non-matching IDs
+                }
+            }
+        });
     }
 
     @Override
     public List<Ticket> getTicketsByUserId(String userId) {
-        return ticketRepository.findAllByCreatedById(userId);
+        List<Ticket> tickets = ticketRepository.findAllByCreatedById(userId);
+        populateUserNames(tickets);
+        return tickets;
     }
 
     @Override
