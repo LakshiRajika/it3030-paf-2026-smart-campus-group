@@ -35,6 +35,7 @@ public class JwtTokenProvider {
                 .setIssuedAt(new Date())
                 .setExpiration(expiryDate)
                 .claim("email", userPrincipal.getEmail())
+                .claim("name", userPrincipal.getName())
                 .claim("roles", userPrincipal.getAuthorities())
                 .signWith(key, SignatureAlgorithm.HS512)
                 .compact();
@@ -53,6 +54,7 @@ public class JwtTokenProvider {
                 .setIssuedAt(new Date())
                 .setExpiration(expiryDate)
                 .claim("email", userPrincipal.getEmail())
+                .claim("name", userPrincipal.getName())
                 .claim("roles", userPrincipal.getAuthorities())
                 .signWith(key, SignatureAlgorithm.HS512)
                 .compact();
