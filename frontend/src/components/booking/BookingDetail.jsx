@@ -79,6 +79,49 @@ const BookingDetail = ({ booking: initialBooking, isAdmin, onClose, onUpdated })
         }
     };
 
+    const handleDownloadICS = () => {
+        const { date, startTime, endTime, resourceName, purpose, resourceLocation, id } = booking;
+        
+        // Format: YYYYMMDDTHHMMSS
+        const formatICSDate = (dateStr, timeStr) => {
+            const cleanDate = dateStr.replace(/-/g, '');
+            const cleanTime = timeStr.replace(/:/g, '') + '00';
+            return `${cleanDate}T${cleanTime}`;
+        };
+
+        const dtStart = formatICSDate(date, startTime);
+        const dtEnd = formatICSDate(date, endTime);
+        const now = new Date().toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+
+        const icsContent = [
+            'BEGIN:VCALENDAR',
+            'VERSION:2.0',
+            'PRODID:-//Smart Campus//Operations Hub//EN',
+            'CALSCALE:GREGORIAN',
+            'BEGIN:VEVENT',
+            `UID:${id}@smartcampus.com`,
+            `DTSTAMP:${now}`,
+            `DTSTART:${dtStart}`,
+            `DTEND:${dtEnd}`,
+            `SUMMARY:${resourceName} Booking`,
+            `DESCRIPTION:Purpose: ${purpose.replace(/\n/g, '\\n')}`,
+            `LOCATION:${resourceLocation}`,
+            'STATUS:CONFIRMED',
+            'SEQUENCE:0',
+            'END:VEVENT',
+            'END:VCALENDAR'
+        ].join('\r\n');
+
+        const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `booking_${id}.ics`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
@@ -161,6 +204,17 @@ const BookingDetail = ({ booking: initialBooking, isAdmin, onClose, onUpdated })
                                 <p className="text-sm text-emerald-900 font-medium">Verified at {new Date(booking.checkedInAt).toLocaleString()}</p>
                             </div>
                         </div>
+                    )}
+
+                    {/* Add to Calendar Button */}
+                    {booking.status === 'APPROVED' && (
+                        <button
+                            onClick={handleDownloadICS}
+                            className="w-full flex items-center justify-center gap-2 py-3 bg-white text-slate-700 font-bold rounded-xl hover:bg-slate-50 transition-all border border-slate-200 shadow-sm"
+                        >
+                            <Calendar size={18} className="text-indigo-500" />
+                            Add to My Personal Calendar (.ics)
+                        </button>
                     )}
 
                     {/* QR Code Section */}

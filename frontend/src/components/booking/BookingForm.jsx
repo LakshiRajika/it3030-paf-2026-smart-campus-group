@@ -64,7 +64,11 @@ const BookingForm = ({ onClose, onSuccess, existingBooking = null }) => {
         } else if (form.date === localToday) {
             // Allow 30 mins grace period in frontend too to avoid frustration
             const thirtyMinsAgo = new Date(now.getTime() - 30 * 60000);
-            const graceTime = thirtyMinsAgo.toTimeString().slice(0, 5);
+            // If the grace period pushed us to yesterday, the minimum time for today is 00:00
+            const graceTime = thirtyMinsAgo.toLocaleDateString('en-CA') === localToday 
+                ? thirtyMinsAgo.toTimeString().slice(0, 5) 
+                : '00:00';
+            
             if (form.startTime < graceTime) {
                 e.startTime = 'Start time is too far in the past';
             }
