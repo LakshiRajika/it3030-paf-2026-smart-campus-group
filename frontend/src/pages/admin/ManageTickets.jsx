@@ -8,7 +8,6 @@ import {
   MapPin, 
   AlertCircle, 
   Clock, 
-  ChevronRight, 
   LayoutGrid, 
   List,
   Filter,

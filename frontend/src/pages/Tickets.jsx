@@ -10,7 +10,6 @@ import {
   Clock, 
   CheckCircle2, 
   Ticket as TicketIcon,
-  BarChart3,
   ChevronRight,
   X
 } from 'lucide-react';
