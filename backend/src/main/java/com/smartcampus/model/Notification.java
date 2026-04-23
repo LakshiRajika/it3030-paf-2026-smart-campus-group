@@ -29,6 +29,7 @@ public class Notification {
     public enum NotificationType {
         BOOKING_STATUS,
         TICKET_STATUS,
-        TICKET_COMMENT
+        TICKET_COMMENT,
+        ESCALATION
     }
 }

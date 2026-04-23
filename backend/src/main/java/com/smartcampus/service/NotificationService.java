@@ -29,6 +29,8 @@ public class NotificationService {
             shouldNotify = false;
         } else if (type == Notification.NotificationType.TICKET_COMMENT && !prefs.isCommentNotifications()) {
             shouldNotify = false;
+        } else if (type == Notification.NotificationType.ESCALATION && !prefs.isEscalationNotifications()) {
+            shouldNotify = false;
         }
 
         if (shouldNotify) {
