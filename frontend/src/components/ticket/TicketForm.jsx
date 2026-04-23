@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { analyzeDescription } from '../../utils/aiAssistant';
 
-const StatusBadge = ({ status }) => {
+const StatusBadge = ({ status, isEscalated }) => {
   const getStatusStyles = (status) => {
     switch (status) {
       case 'OPEN':
@@ -20,9 +20,17 @@ const StatusBadge = ({ status }) => {
   };
 
   return (
-    <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusStyles(status)}`}>
-      {status.replace('_', ' ')}
-    </span>
+    <div className="relative inline-block">
+      <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusStyles(status)}`}>
+        {status.replace('_', ' ')}
+      </span>
+      {isEscalated && (
+        <div className="absolute -top-1 -right-1 flex h-3 w-3">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+          <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+        </div>
+      )}
+    </div>
   );
 };
 

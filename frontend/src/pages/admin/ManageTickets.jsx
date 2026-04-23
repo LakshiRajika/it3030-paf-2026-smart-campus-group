@@ -13,14 +13,17 @@ import {
   Filter,
   X,
   Download,
-  Eye
+  Eye,
+  FileText
 } from 'lucide-react';
+import PDFExportService from '../../services/pdfExportService';
 
 const ManageTickets = () => {
   const [tickets, setTickets] = useState([]);
   const [filteredTickets, setFilteredTickets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState('grid');
+  const [exporting, setExporting] = useState(false);
   const navigate = useNavigate();
 
   // Search and Filter States
@@ -124,6 +127,27 @@ const ManageTickets = () => {
     URL.revokeObjectURL(url);
   };
 
+  // PDF Export
+  const handlePDFExport = async () => {
+    if (filteredTickets.length === 0) {
+        alert('No tickets to export!');
+        return;
+    }
+    
+    setExporting(true);
+    try {
+        await PDFExportService.exportTicketsToPDF(
+            filteredTickets, 
+            `Ticket Report - ${new Date().toLocaleDateString()}`
+        );
+    } catch (error) {
+        console.error('PDF export failed:', error);
+        alert('Failed to generate PDF. Please try again.');
+    } finally {
+        setExporting(false);
+    }
+  };
+
   // Get status count for display
   const getStatusCount = (status) => {
     if (status === 'ALL') return tickets.length;
@@ -155,6 +179,20 @@ const ManageTickets = () => {
         </div>
         
         <div className="flex flex-wrap items-center gap-3">
+          {/* PDF Export Button */}
+          <button
+              onClick={handlePDFExport}
+              disabled={exporting || filteredTickets.length === 0}
+              className="bg-red-600 text-white px-4 py-2 rounded-xl hover:bg-red-700 transition-all flex items-center gap-2 shadow-sm font-bold text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+              {exporting ? (
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+              ) : (
+                  <FileText className="w-4 h-4" />
+              )}
+              {exporting ? 'Generating...' : 'Export PDF'}
+          </button>
+
           {/* Export Button */}
           {filteredTickets.length > 0 && (
             <button
