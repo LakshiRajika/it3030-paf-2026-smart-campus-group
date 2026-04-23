@@ -59,6 +59,10 @@ public class AuthServiceImpl implements AuthService {
         }
 
         String token = jwtTokenProvider.createToken(user);
+        
+        // Update last login
+        user.setLastLogin(java.time.LocalDateTime.now());
+        userRepository.save(user);
 
         return new AuthResponse(token);
     }

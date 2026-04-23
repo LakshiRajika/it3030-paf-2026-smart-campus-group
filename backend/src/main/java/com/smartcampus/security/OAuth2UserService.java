@@ -81,6 +81,7 @@ public class OAuth2UserService extends DefaultOAuth2UserService {
                     .roles(roles)
                     .build();
         }
+        user.setLastLogin(java.time.LocalDateTime.now());
         user = userRepository.save(user);
 
         return new CustomUserDetails(user, attributes);

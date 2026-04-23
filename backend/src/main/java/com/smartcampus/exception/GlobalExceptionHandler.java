@@ -79,7 +79,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Map<String, Object>> globalExceptionHandler(Exception ex, WebRequest request) {
         Map<String, Object> details = new HashMap<>();
         details.put("timestamp", new Date());
-        details.put("message", "An unexpected error occurred");
+        details.put("message", ex.getMessage() != null ? ex.getMessage() : "Unexpected error (null message) - Type: " + ex.getClass().getSimpleName());
         details.put("error", ex.getClass().getSimpleName());
         if (request != null) {
             details.put("details", request.getDescription(false));
