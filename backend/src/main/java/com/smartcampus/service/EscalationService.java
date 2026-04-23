@@ -23,7 +23,6 @@ public class EscalationService {
     private final TicketRepository ticketRepository;
     private final TicketCommentRepository commentRepository;
     private final NotificationService notificationService;
-    private final ActivityService activityService;
 
     // Priority escalation thresholds (in hours)
     private static final int LOW_TO_MEDIUM_HOURS = 48;
@@ -32,12 +31,10 @@ public class EscalationService {
 
     public EscalationService(TicketRepository ticketRepository, 
                              TicketCommentRepository commentRepository,
-                             NotificationService notificationService,
-                             ActivityService activityService) {
+                             NotificationService notificationService) {
         this.ticketRepository = ticketRepository;
         this.commentRepository = commentRepository;
         this.notificationService = notificationService;
-        this.activityService = activityService;
     }
 
     // Run every hour
@@ -95,9 +92,6 @@ public class EscalationService {
                     .updatedAt(now)
                     .build();
             commentRepository.save(systemComment);
-            
-            // Broadcast to activity feed
-            activityService.notifyEscalation(ticket.getId(), currentPriority.toString(), newPriority.toString());
             
             // Send notifications
             if (ticket.getAssignedToId() != null) {

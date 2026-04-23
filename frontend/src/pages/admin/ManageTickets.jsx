@@ -14,7 +14,8 @@ import {
   X,
   Download,
   Eye,
-  FileText
+  FileText,
+  Trash2
 } from 'lucide-react';
 import PDFExportService from '../../services/pdfExportService';
 
@@ -145,6 +146,22 @@ const ManageTickets = () => {
         alert('Failed to generate PDF. Please try again.');
     } finally {
         setExporting(false);
+    }
+  };
+
+  // Delete Ticket
+  const handleDelete = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this ticket? This action cannot be undone.')) return;
+    
+    try {
+      setLoading(true);
+      await ticketService.deleteTicket(id);
+      await fetchTickets(); // Refresh list
+    } catch (err) {
+      console.error(err);
+      alert('Failed to delete ticket: ' + (err.response?.data?.message || err.message));
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -458,16 +475,28 @@ const ManageTickets = () => {
 
                 <div className="mt-6 pt-4 border-t border-slate-50 flex justify-between items-center relative z-10">
                   <span className="text-xs font-mono text-slate-400">#{ticket.id.substring(ticket.id.length - 8)}</span>
-                  <button 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      navigate(`/tickets/${ticket.id}`);
-                    }}
-                    className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white text-xs font-bold uppercase tracking-wider rounded-xl hover:bg-indigo-600 transition-all"
-                  >
-                    <Eye className="w-3 h-3" />
-                    View Details
-                  </button>
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDelete(ticket.id);
+                      }}
+                      className="p-2 bg-rose-50 text-rose-600 rounded-xl hover:bg-rose-600 hover:text-white transition-all shadow-sm"
+                      title="Delete Ticket"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/tickets/${ticket.id}`);
+                      }}
+                      className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white text-xs font-bold uppercase tracking-wider rounded-xl hover:bg-indigo-600 transition-all"
+                    >
+                      <Eye className="w-3 h-3" />
+                      View Details
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
@@ -525,13 +554,25 @@ const ManageTickets = () => {
                         <StatusBadge status={ticket.status} />
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <button 
-                          onClick={() => navigate(`/tickets/${ticket.id}`)}
-                          className="text-indigo-600 font-bold text-xs hover:text-white bg-indigo-50 hover:bg-indigo-600 px-3 py-2 rounded-lg transition-all flex items-center gap-1 ml-auto"
-                        >
-                          <Eye className="w-3 h-3" />
-                          Manage
-                        </button>
+                        <div className="flex items-center gap-2 justify-end">
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDelete(ticket.id);
+                            }}
+                            className="p-2 bg-rose-50 text-rose-600 rounded-lg hover:bg-rose-600 hover:text-white transition-all"
+                            title="Delete Ticket"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                          <button 
+                            onClick={() => navigate(`/tickets/${ticket.id}`)}
+                            className="text-indigo-600 font-bold text-xs hover:text-white bg-indigo-50 hover:bg-indigo-600 px-3 py-2 rounded-lg transition-all flex items-center gap-1"
+                          >
+                            <Eye className="w-3 h-3" />
+                            Manage
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
