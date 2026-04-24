@@ -494,7 +494,7 @@ const ManageTickets = () => {
                       className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white text-xs font-bold uppercase tracking-wider rounded-xl hover:bg-indigo-600 transition-all"
                     >
                       <Eye className="w-3 h-3" />
-                      View Details
+                     Manage ticket
                     </button>
                   </div>
                 </div>
