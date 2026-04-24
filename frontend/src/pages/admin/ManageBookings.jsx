@@ -7,6 +7,7 @@ import { Link } from 'react-router-dom';
 import BookingCard from '../../components/booking/BookingCard';
 import BookingDetail from '../../components/booking/BookingDetail';
 import ConfirmModal from '../../components/ConfirmModal';
+import toast from 'react-hot-toast';
 import bookingService from '../../services/bookingService';
 import resourceService from '../../services/resourceService';
 
@@ -78,9 +79,11 @@ const ManageBookings = () => {
         try {
             await bookingService.deleteBooking(deletingId);
             setBookings(prev => prev.filter(b => b.id !== deletingId));
+            toast.success('Booking record deleted forever.');
             setDeletingId(null);
         } catch (err) {
-            alert(err?.response?.data?.message || 'Delete failed.');
+            const msg = err?.response?.data?.message || 'Delete failed.';
+            toast.error(msg);
         }
     };
 

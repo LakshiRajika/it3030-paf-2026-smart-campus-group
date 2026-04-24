@@ -1,5 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, NavLink } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
 import Tickets from './pages/Tickets';
 import TicketDetail from './pages/TicketDetail';
 import Dashboard from './pages/Dashboard';
@@ -116,6 +117,7 @@ const DashboardRoute = () => {
 function App() {
   return (
     <AuthProvider>
+      <Toaster position="top-right" reverseOrder={false} />
       <Router>
         <Layout>
           <Routes>

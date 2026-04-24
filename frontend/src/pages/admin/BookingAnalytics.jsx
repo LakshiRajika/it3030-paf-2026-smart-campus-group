@@ -1,4 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   PieChart, Pie, Cell
@@ -6,9 +8,11 @@ import {
 import bookingService from '../../services/bookingService';
 import { 
     Users, Calendar, CheckCircle, TrendingUp, 
-    Download, ArrowLeft, Loader, BarChart3, PieChart as PieChartIcon
+    Download, ArrowLeft, Loader, BarChart3, PieChart as PieChartIcon,
+    FileText
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import toast from 'react-hot-toast';
 
 const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
 
@@ -16,6 +20,8 @@ const BookingAnalytics = () => {
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [exporting, setExporting] = useState(false);
+    const [exportingPDF, setExportingPDF] = useState(false);
+    const reportRef = useRef(null);
 
     useEffect(() => {
         fetchAnalytics();
@@ -68,10 +74,68 @@ const BookingAnalytics = () => {
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
+            toast.success('Report downloaded successfully!');
         } catch (error) {
             console.error("Export failed:", error);
+            toast.error('Failed to generate report.');
         } finally {
             setExporting(false);
+        }
+    };
+
+    const handleExportPDF = async () => {
+        if (!reportRef.current) return;
+        setExportingPDF(true);
+        const toastId = toast.loading('Generating high-quality report...');
+
+        try {
+            // 1. Capture the element with higher scale for crispness
+            const canvas = await html2canvas(reportRef.current, {
+                scale: 2,
+                useCORS: true,
+                backgroundColor: '#f8fafc',
+                windowWidth: 1400 // Ensure consistent width for capture
+            });
+            
+            const imgData = canvas.toDataURL('image/png');
+            
+            // 2. Calculate dimensions
+            const imgWidth = 210; // A4 Width in mm
+            const pageHeight = 297; // A4 Height in mm
+            const imgHeight = (canvas.height * imgWidth) / canvas.width;
+            
+            // 3. Create PDF with dynamic height to avoid cutoff
+            // If the report is taller than A4, we use the custom height
+            const pdf = new jsPDF({
+                orientation: 'p',
+                unit: 'mm',
+                format: [imgWidth, Math.max(pageHeight, imgHeight + 20)] 
+            });
+
+            const finalWidth = pdf.internal.pageSize.getWidth();
+            const finalHeight = pdf.internal.pageSize.getHeight();
+
+            // 4. Draw a premium decorative frame
+            pdf.setDrawColor(99, 102, 241); // Indigo-600
+            pdf.setLineWidth(1.5);
+            pdf.rect(5, 5, finalWidth - 10, finalHeight - 10);
+            
+            // 5. Add a "Confidential/Internal" watermark-style text at the bottom
+            pdf.setFontSize(8);
+            pdf.setTextColor(150);
+            pdf.text(`Smart Campus Operations Hub - Digital Analytics Report - ${new Date().toLocaleString()}`, 10, finalHeight - 15);
+
+            // 6. Add the captured image
+            pdf.addImage(imgData, 'PNG', 0, 10, finalWidth, imgHeight);
+            
+            pdf.save(`SmartCampus_Report_${new Date().toISOString().split('T')[0]}.pdf`);
+            
+            toast.success('High-quality report ready!', { id: toastId });
+        } catch (error) {
+            console.error("PDF Export failed:", error);
+            toast.error('Export failed. Please try again.', { id: toastId });
+        } finally {
+            setExportingPDF(false);
         }
     };
 
@@ -109,11 +173,11 @@ const BookingAnalytics = () => {
     })).filter(h => h.hour >= 7 && h.hour <= 22); // Show 7 AM to 10 PM
 
     return (
-        <div className="max-w-7xl mx-auto px-4 py-8 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+        <div ref={reportRef} className="max-w-7xl mx-auto px-4 py-8 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 bg-slate-50">
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="flex items-center gap-4">
-                    <Link to="/admin/bookings" className="p-2.5 rounded-2xl bg-white border border-slate-100 shadow-sm hover:shadow-md transition-all text-slate-500 hover:text-indigo-600">
+                    <Link to="/admin/bookings" className="p-2.5 rounded-2xl bg-white border border-slate-100 shadow-sm hover:shadow-md transition-all text-slate-500 hover:text-indigo-600 no-print" data-html2canvas-ignore>
                         <ArrowLeft size={20} />
                     </Link>
                     <div>
@@ -121,18 +185,28 @@ const BookingAnalytics = () => {
                             <BarChart3 className="w-8 h-8 text-indigo-600" />
                             Booking Strategy Center
                         </h1>
-                        <p className="text-slate-500 mt-1">Resource utilization and occupancy analytics.</p>
+                        <p className="text-slate-500 mt-1">Resource utilization and occupancy analytics. Generated on {new Date().toLocaleDateString()}</p>
                     </div>
                 </div>
                 
-                <button 
-                    onClick={handleExportCSV}
-                    disabled={exporting}
-                    className="bg-slate-900 text-white px-6 py-3 rounded-2xl hover:bg-slate-800 transition-all flex items-center justify-center gap-2 shadow-xl shadow-slate-200 font-bold text-sm disabled:opacity-50"
-                >
-                    {exporting ? <Loader className="animate-spin" size={16} /> : <Download size={16} />}
-                    {exporting ? 'Generating Report...' : 'Export History (CSV)'}
-                </button>
+                <div className="flex flex-wrap gap-3" data-html2canvas-ignore>
+                    <button 
+                        onClick={handleExportCSV}
+                        disabled={exporting || exportingPDF}
+                        className="bg-white text-slate-700 border border-slate-200 px-5 py-2.5 rounded-2xl hover:bg-slate-50 transition-all flex items-center justify-center gap-2 shadow-sm font-bold text-sm disabled:opacity-50"
+                    >
+                        {exporting ? <Loader className="animate-spin" size={16} /> : <Download size={16} className="text-slate-400" />}
+                        Export Data (CSV)
+                    </button>
+                    <button 
+                        onClick={handleExportPDF}
+                        disabled={exporting || exportingPDF}
+                        className="bg-indigo-600 text-white px-6 py-2.5 rounded-2xl hover:bg-indigo-700 transition-all flex items-center justify-center gap-2 shadow-xl shadow-indigo-100 font-bold text-sm disabled:opacity-50"
+                    >
+                        {exportingPDF ? <Loader className="animate-spin" size={16} /> : <FileText size={16} />}
+                        {exportingPDF ? 'Processing...' : 'Download Full PDF Report'}
+                    </button>
+                </div>
             </div>
 
             {/* Quick Stats Grid */}
@@ -202,7 +276,7 @@ const BookingAnalytics = () => {
                     </div>
                 </div>
 
-                {/* Resource Utilization */}
+                {/* Resource Utilization Chart */}
                 <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm hover:shadow-xl transition-all duration-500">
                     <h3 className="text-lg font-bold text-slate-800 mb-8">Most Utilized Resources</h3>
                     <div className="h-[300px]">
@@ -218,6 +292,85 @@ const BookingAnalytics = () => {
                                 <Bar dataKey="count" fill="#8b5cf6" radius={[0, 10, 10, 0]} barSize={25} />
                             </BarChart>
                         </ResponsiveContainer>
+                    </div>
+                </div>
+            </div>
+
+            {/* Detailed Data Tables */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* Status Breakdown Table */}
+                <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden">
+                    <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
+                        <CheckCircle size={20} className="text-emerald-500" />
+                        Status Summary
+                    </h3>
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left">
+                            <thead>
+                                <tr className="border-b border-slate-50">
+                                    <th className="pb-4 text-xs font-black text-slate-400 uppercase tracking-wider">Status</th>
+                                    <th className="pb-4 text-xs font-black text-slate-400 uppercase tracking-wider text-right">Bookings</th>
+                                    <th className="pb-4 text-xs font-black text-slate-400 uppercase tracking-wider text-right">Percentage</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-50">
+                                {statusChartData.map((s, i) => (
+                                    <tr key={s.name} className="group">
+                                        <td className="py-4">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-2 h-2 rounded-full" style={{backgroundColor: COLORS[i % COLORS.length]}} />
+                                                <span className="font-bold text-slate-700">{s.name}</span>
+                                            </div>
+                                        </td>
+                                        <td className="py-4 text-right font-mono font-bold text-slate-900">{s.value}</td>
+                                        <td className="py-4 text-right">
+                                            <span className="px-2 py-1 bg-slate-50 rounded-lg text-xs font-bold text-slate-500">
+                                                {((s.value / data.totalBookings) * 100).toFixed(1)}%
+                                            </span>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                {/* Resource Ranking Table */}
+                <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden">
+                    <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
+                        <TrendingUp size={20} className="text-indigo-500" />
+                        Top Performing Facilities
+                    </h3>
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left">
+                            <thead>
+                                <tr className="border-b border-slate-50">
+                                    <th className="pb-4 text-xs font-black text-slate-400 uppercase tracking-wider">Resource Name</th>
+                                    <th className="pb-4 text-xs font-black text-slate-400 uppercase tracking-wider text-right">Total Usage</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-50">
+                                {resourceChartData.map((r, i) => (
+                                    <tr key={r.name}>
+                                        <td className="py-4">
+                                            <span className="text-slate-500 font-bold mr-2">#{i + 1}</span>
+                                            <span className="font-bold text-slate-700">{r.name}</span>
+                                        </td>
+                                        <td className="py-4 text-right">
+                                            <div className="flex items-center justify-end gap-2">
+                                                <div className="w-16 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                                    <div 
+                                                        className="h-full bg-indigo-500" 
+                                                        style={{width: `${(r.count / resourceChartData[0].count) * 100}%`}} 
+                                                    />
+                                                </div>
+                                                <span className="font-mono font-bold text-slate-900 w-8 text-right">{r.count}</span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>

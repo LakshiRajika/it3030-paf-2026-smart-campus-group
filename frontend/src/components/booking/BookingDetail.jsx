@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Calendar, Clock, Users, FileText, MapPin, CheckCircle, XCircle, AlertCircle, Loader, QrCode } from 'lucide-react';
 import { QRCodeCanvas } from 'qrcode.react';
+import toast from 'react-hot-toast';
 import bookingService from '../../services/bookingService';
 
 const STATUS_COLORS = {
@@ -56,10 +57,13 @@ const BookingDetail = ({ booking: initialBooking, isAdmin, onClose, onUpdated })
                 status,
                 status === 'REJECTED' ? rejectionReason : null
             );
+            toast.success(`Booking ${status === 'APPROVED' ? 'approved' : 'rejected'} successfully!`);
             onUpdated(updated);
             onClose();
         } catch (err) {
-            setError(err?.response?.data?.message || 'Action failed. Please try again.');
+            const msg = err?.response?.data?.message || 'Action failed. Please try again.';
+            setError(msg);
+            toast.error(msg);
         } finally {
             setLoading(false);
         }
@@ -70,10 +74,13 @@ const BookingDetail = ({ booking: initialBooking, isAdmin, onClose, onUpdated })
         setError('');
         try {
             const updated = await bookingService.cancelBooking(booking.id);
+            toast.success('Booking cancelled successfully.');
             onUpdated(updated);
             onClose();
         } catch (err) {
-            setError(err?.response?.data?.message || 'Cancel failed. Please try again.');
+            const msg = err?.response?.data?.message || 'Cancel failed. Please try again.';
+            setError(msg);
+            toast.error(msg);
         } finally {
             setLoading(false);
         }
@@ -128,6 +135,7 @@ const BookingDetail = ({ booking: initialBooking, isAdmin, onClose, onUpdated })
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+        toast.success('Calendar file (.ics) downloaded!');
     };
 
     return (

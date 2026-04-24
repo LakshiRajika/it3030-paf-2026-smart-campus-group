@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Calendar, Clock, Users, FileText, AlertCircle, CheckCircle, Loader } from 'lucide-react';
+import toast from 'react-hot-toast';
 import bookingService from '../../services/bookingService';
 import resourceService from '../../services/resourceService';
 
@@ -130,14 +131,17 @@ const BookingForm = ({ onClose, onSuccess, existingBooking = null }) => {
             let result;
             if (isEditMode) {
                 result = await bookingService.updateBooking(existingBooking.id, payload);
+                toast.success('Booking updated successfully!');
             } else {
                 result = await bookingService.createBooking(payload);
+                toast.success('Booking request submitted successfully!');
             }
             onSuccess(result);
         } catch (err) {
             console.error('Booking failed:', err);
             const msg = err?.response?.data?.message || err?.message || 'Failed to create booking. Please try again.';
             setApiError(msg);
+            toast.error(msg);
         } finally {
             setSubmitting(false);
         }
