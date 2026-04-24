@@ -37,7 +37,13 @@ const BookingForm = ({ onClose, onSuccess, existingBooking = null }) => {
         setConflictCheck('checking');
         const timer = setTimeout(async () => {
             try {
-                const result = await bookingService.checkConflict(resourceId, date, startTime, endTime);
+                const result = await bookingService.checkConflict(
+                    resourceId, 
+                    date, 
+                    startTime, 
+                    endTime, 
+                    existingBooking?.id
+                );
                 setConflictCheck(result.hasConflict ? 'conflict' : 'available');
             } catch {
                 setConflictCheck(null);

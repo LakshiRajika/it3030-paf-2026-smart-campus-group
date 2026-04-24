@@ -81,16 +81,20 @@ const BookingDetail = ({ booking: initialBooking, isAdmin, onClose, onUpdated })
 
     const handleDownloadICS = () => {
         const { date, startTime, endTime, resourceName, purpose, resourceLocation, id } = booking;
-        
-        // Format: YYYYMMDDTHHMMSS
-        const formatICSDate = (dateStr, timeStr) => {
-            const cleanDate = dateStr.replace(/-/g, '');
-            const cleanTime = timeStr.replace(/:/g, '') + '00';
-            return `${cleanDate}T${cleanTime}`;
+
+        // Convert Local Time to UTC String: YYYYMMDDTHHMMSSZ
+        const formatToUTC = (dateStr, timeStr) => {
+            try {
+                const localDate = new Date(`${dateStr}T${timeStr}`);
+                return localDate.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+            } catch (e) {
+                // Fallback to basic format if date is invalid
+                return dateStr.replace(/-/g, '') + 'T' + timeStr.replace(/:/g, '') + '00Z';
+            }
         };
 
-        const dtStart = formatICSDate(date, startTime);
-        const dtEnd = formatICSDate(date, endTime);
+        const dtStart = formatToUTC(date, startTime);
+        const dtEnd = formatToUTC(date, endTime);
         const now = new Date().toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
 
         const icsContent = [
@@ -98,16 +102,20 @@ const BookingDetail = ({ booking: initialBooking, isAdmin, onClose, onUpdated })
             'VERSION:2.0',
             'PRODID:-//Smart Campus//Operations Hub//EN',
             'CALSCALE:GREGORIAN',
+            'METHOD:REQUEST',
             'BEGIN:VEVENT',
             `UID:${id}@smartcampus.com`,
             `DTSTAMP:${now}`,
             `DTSTART:${dtStart}`,
             `DTEND:${dtEnd}`,
-            `SUMMARY:${resourceName} Booking`,
+            `SUMMARY:${resourceName} Booking${isAdmin ? ` (${booking.userName})` : ''}`,
             `DESCRIPTION:Purpose: ${purpose.replace(/\n/g, '\\n')}`,
             `LOCATION:${resourceLocation}`,
+            `ORGANIZER;CN=Smart Campus:MAILTO:noreply@smartcampus.com`,
+            `ATTENDEE;RSVP=TRUE;CN=User:MAILTO:user@smartcampus.com`,
             'STATUS:CONFIRMED',
             'SEQUENCE:0',
+            'TRANSP:OPAQUE',
             'END:VEVENT',
             'END:VCALENDAR'
         ].join('\r\n');
@@ -207,7 +215,7 @@ const BookingDetail = ({ booking: initialBooking, isAdmin, onClose, onUpdated })
                     )}
 
                     {/* Add to Calendar Button */}
-                    {booking.status === 'APPROVED' && (
+                    {!isAdmin && booking.status === 'APPROVED' && (
                         <button
                             onClick={handleDownloadICS}
                             className="w-full flex items-center justify-center gap-2 py-3 bg-white text-slate-700 font-bold rounded-xl hover:bg-slate-50 transition-all border border-slate-200 shadow-sm"
@@ -249,9 +257,9 @@ const BookingDetail = ({ booking: initialBooking, isAdmin, onClose, onUpdated })
                                     <p className="text-xs text-slate-500 mt-1 px-4 leading-relaxed">
                                         Present this code at the facility entrance for verification by staff.
                                     </p>
-                                    
+
                                     {/* Simulation Link for Desktop Testing */}
-                                    <a 
+                                    <a
                                         href={`/verify-checkin/${booking.id}?token=${booking.checkInToken}`}
                                         target="_blank"
                                         rel="noopener noreferrer"

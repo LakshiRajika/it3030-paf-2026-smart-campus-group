@@ -77,10 +77,10 @@ const bookingService = {
     /**
      * Check if a time slot is available (no conflict)
      */
-    checkConflict: async (resourceId, date, startTime, endTime) => {
+    checkConflict: async (resourceId, date, startTime, endTime, excludeId = null) => {
         const response = await axios.get(`${API_URL}/bookings/check-conflict`, {
             headers: authHeaders(),
-            params: { resourceId, date, startTime, endTime },
+            params: { resourceId, date, startTime, endTime, excludeId },
         });
         return response.data;
     },

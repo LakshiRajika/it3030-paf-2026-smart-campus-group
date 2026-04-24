@@ -131,13 +131,14 @@ public class BookingController {
             @RequestParam String resourceId,
             @RequestParam String date,
             @RequestParam String startTime,
-            @RequestParam String endTime) {
+            @RequestParam String endTime,
+            @RequestParam(required = false) String excludeId) {
 
         java.time.LocalDate localDate = java.time.LocalDate.parse(date);
         java.time.LocalTime start = java.time.LocalTime.parse(startTime);
         java.time.LocalTime end = java.time.LocalTime.parse(endTime);
 
-        boolean conflict = bookingService.hasConflict(resourceId, localDate, start, end, null);
+        boolean conflict = bookingService.hasConflict(resourceId, localDate, start, end, excludeId);
 
         return ResponseEntity.ok(Map.of(
                 "hasConflict", conflict,
