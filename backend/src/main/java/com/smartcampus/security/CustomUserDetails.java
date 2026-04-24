@@ -15,6 +15,7 @@ import java.util.stream.Collectors;
 public class CustomUserDetails implements OAuth2User, UserDetails {
     private final String id;
     private final String email;
+    private final String name;
     private final String password;
     private final Collection<? extends GrantedAuthority> authorities;
     private final Map<String, Object> attributes;
@@ -22,6 +23,7 @@ public class CustomUserDetails implements OAuth2User, UserDetails {
     public CustomUserDetails(User user) {
         this.id = user.getId();
         this.email = user.getEmail();
+        this.name = user.getName();
         this.password = user.getPassword();
         this.authorities = user.getRoles().stream()
                 .map(role -> new SimpleGrantedAuthority("ROLE_" + role.name()))
@@ -32,6 +34,7 @@ public class CustomUserDetails implements OAuth2User, UserDetails {
     public CustomUserDetails(User user, Map<String, Object> attributes) {
         this.id = user.getId();
         this.email = user.getEmail();
+        this.name = user.getName();
         this.password = user.getPassword();
         this.authorities = user.getRoles().stream()
                 .map(role -> new SimpleGrantedAuthority("ROLE_" + role.name()))
@@ -76,6 +79,6 @@ public class CustomUserDetails implements OAuth2User, UserDetails {
 
     @Override
     public String getName() {
-        return id;
+        return name != null ? name : id;
     }
 }

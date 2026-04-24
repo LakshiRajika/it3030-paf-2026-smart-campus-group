@@ -35,7 +35,7 @@ public class SecurityConfig {
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/", "/error", "/favicon.ico", "/auth/**", "/api/auth/**", "/oauth2/**", "/login/oauth2/code/*").permitAll()
-                .requestMatchers("/api/public/**", "/api/tickets/test", "/api/tickets/uploads/**", "/api/bookings/public/**").permitAll()
+                .requestMatchers("/api/public/**", "/api/tickets/test", "/api/tickets/uploads/**", "/api/bookings/public/**", "/api/v1/resources/images/**").permitAll()
                 .anyRequest().authenticated()
             )
             .oauth2Login(oauth2 -> oauth2

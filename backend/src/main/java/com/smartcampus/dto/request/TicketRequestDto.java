@@ -10,6 +10,7 @@ public class TicketRequestDto {
     private TicketCategory category;
     private TicketPriority priority;
     private String createdById;
+    private String createdByName;
 
     public TicketRequestDto() {}
 
@@ -25,4 +26,6 @@ public class TicketRequestDto {
     public void setPriority(TicketPriority priority) { this.priority = priority; }
     public String getCreatedById() { return createdById; }
     public void setCreatedById(String createdById) { this.createdById = createdById; }
+    public String getCreatedByName() { return createdByName; }
+    public void setCreatedByName(String createdByName) { this.createdByName = createdByName; }
 }

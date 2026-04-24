@@ -45,7 +45,7 @@ public class BookingController {
      * Create a new booking request. Status defaults to PENDING.
      */
     @PostMapping
-    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN', 'TECHNICIAN', 'MANAGER')")
     public ResponseEntity<BookingResponse> createBooking(
             @Valid @RequestBody BookingRequest request,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
@@ -59,7 +59,7 @@ public class BookingController {
      * Edit a PENDING booking (owner only). Can change resource, date, time, purpose, attendees.
      */
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN', 'TECHNICIAN', 'MANAGER')")
     public ResponseEntity<BookingResponse> updateBooking(
             @PathVariable String id,
             @Valid @RequestBody BookingRequest request,
@@ -75,7 +75,7 @@ public class BookingController {
      * Optional query param: ?status=PENDING|APPROVED|REJECTED|CANCELLED
      */
     @GetMapping("/my")
-    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN', 'TECHNICIAN', 'MANAGER')")
     public ResponseEntity<List<BookingResponse>> getMyBookings(
             @RequestParam(required = false) BookingStatus status,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
@@ -93,7 +93,7 @@ public class BookingController {
      * Users can only see their own; Admins can see any.
      */
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN', 'TECHNICIAN', 'MANAGER')")
     public ResponseEntity<BookingResponse> getBookingById(
             @PathVariable String id,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
@@ -111,7 +111,7 @@ public class BookingController {
      * Only PENDING or APPROVED bookings can be cancelled.
      */
     @PatchMapping("/{id}/cancel")
-    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN', 'TECHNICIAN', 'MANAGER')")
     public ResponseEntity<BookingResponse> cancelBooking(
             @PathVariable String id,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
@@ -126,7 +126,7 @@ public class BookingController {
      * Query params: facilityId, date (yyyy-MM-dd), startTime (HH:mm), endTime (HH:mm)
      */
     @GetMapping("/check-conflict")
-    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN', 'TECHNICIAN', 'MANAGER')")
     public ResponseEntity<Map<String, Object>> checkConflict(
             @RequestParam String resourceId,
             @RequestParam String date,
@@ -173,6 +173,14 @@ public class BookingController {
         }
 
         return ResponseEntity.ok(bookings);
+    }
+
+    @GetMapping("/resource/{resourceId}/upcoming")
+    @PreAuthorize("hasAnyRole('USER', 'TECHNICIAN', 'MANAGER', 'ADMIN')")
+    public ResponseEntity<List<BookingResponse>> getUpcomingByResource(
+            @PathVariable String resourceId,
+            @RequestParam(defaultValue = "7") int days) {
+        return ResponseEntity.ok(bookingService.getUpcomingBookingsByResource(resourceId, days));
     }
 
     /**

@@ -22,6 +22,7 @@ public interface BookingService {
     List<BookingResponse> getAllBookings();
     List<BookingResponse> getAllBookingsByStatus(BookingStatus status);
     List<BookingResponse> getAllBookingsByResource(String resourceId);
+    List<BookingResponse> getUpcomingBookingsByResource(String resourceId, int days);
     BookingResponse updateBookingStatus(String bookingId, BookingStatusUpdateRequest request, String adminId);
     BookingAnalyticsResponse getAnalytics();
 
