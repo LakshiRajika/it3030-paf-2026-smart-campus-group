@@ -50,7 +50,7 @@ const BookingForm = ({ onClose, onSuccess, existingBooking = null }) => {
             }
         }, 600);
         return () => clearTimeout(timer);
-    }, [form]);
+    }, [form, existingBooking?.id]);
 
     const validate = () => {
         const e = {};
