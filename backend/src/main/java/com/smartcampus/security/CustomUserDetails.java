@@ -17,6 +17,7 @@ public class CustomUserDetails implements OAuth2User, UserDetails {
     private final String email;
     private final String name;
     private final String password;
+    private final boolean enabled;
     private final Collection<? extends GrantedAuthority> authorities;
     private final Map<String, Object> attributes;
 
@@ -25,6 +26,7 @@ public class CustomUserDetails implements OAuth2User, UserDetails {
         this.email = user.getEmail();
         this.name = user.getName();
         this.password = user.getPassword();
+        this.enabled = user.isEnabled();
         this.authorities = user.getRoles().stream()
                 .map(role -> new SimpleGrantedAuthority("ROLE_" + role.name()))
                 .collect(Collectors.toList());
@@ -36,6 +38,7 @@ public class CustomUserDetails implements OAuth2User, UserDetails {
         this.email = user.getEmail();
         this.name = user.getName();
         this.password = user.getPassword();
+        this.enabled = user.isEnabled();
         this.authorities = user.getRoles().stream()
                 .map(role -> new SimpleGrantedAuthority("ROLE_" + role.name()))
                 .collect(Collectors.toList());
@@ -69,7 +72,7 @@ public class CustomUserDetails implements OAuth2User, UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return true;
+        return enabled;
     }
 
     @Override

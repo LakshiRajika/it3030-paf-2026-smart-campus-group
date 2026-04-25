@@ -9,6 +9,8 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.Set;
+import java.time.LocalDateTime;
+import org.springframework.data.annotation.Transient;
 
 @Data
 @Builder
@@ -24,6 +26,15 @@ public class User {
     private String picture;
     private String password;
     private Set<UserRole> roles;
+    @Builder.Default
+    private boolean enabled = true;
+    private LocalDateTime lastLogin;
+
+    @Transient
+    private long bookingCount;
+    @Transient
+    private long ticketCount;
+
     @Builder.Default
     private NotificationPreferences notificationPreferences = new NotificationPreferences();
 
