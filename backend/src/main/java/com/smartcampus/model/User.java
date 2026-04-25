@@ -45,5 +45,6 @@ public class User {
         private boolean bookingNotifications = true;
         private boolean ticketStatusNotifications = true;
         private boolean commentNotifications = true;
+        private boolean escalationNotifications = true;
     }
 }

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { analyzeDescription } from '../../utils/aiAssistant';
 
-const StatusBadge = ({ status }) => {
+const StatusBadge = ({ status, isEscalated }) => {
   const getStatusStyles = (status) => {
     switch (status) {
       case 'OPEN':
@@ -20,9 +20,17 @@ const StatusBadge = ({ status }) => {
   };
 
   return (
-    <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusStyles(status)}`}>
-      {status.replace('_', ' ')}
-    </span>
+    <div className="relative inline-block">
+      <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusStyles(status)}`}>
+        {status.replace('_', ' ')}
+      </span>
+      {isEscalated && (
+        <div className="absolute -top-1 -right-1 flex h-3 w-3">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+          <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+        </div>
+      )}
+    </div>
   );
 };
 
@@ -37,14 +45,41 @@ const TicketForm = ({ onSubmit, isLoading, initialData }) => {
   const [files, setFiles] = useState([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [showAiPulse, setShowAiPulse] = useState(false);
+  const [errors, setErrors] = useState({});
+
+  const validateForm = () => {
+    const newErrors = {};
+    
+    if (!formData.description || formData.description.trim().length < 20) {
+      newErrors.description = 'Please provide a more detailed description (at least 20 characters).';
+    }
+    
+    if (!formData.location || formData.location.trim().length < 3) {
+      newErrors.location = 'Please specify a valid location.';
+    }
+
+    if (formData.preferredContact && formData.preferredContact.trim().length > 0) {
+      const contactValue = formData.preferredContact.trim();
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      const phoneRegex = /^\+?[\d\s\-()]{7,15}$/;
+      
+      if (!emailRegex.test(contactValue) && !phoneRegex.test(contactValue)) {
+        newErrors.preferredContact = 'Please enter a valid email or phone number.';
+      }
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleAiAnalyze = () => {
     if (!formData.description || formData.description.length < 10) {
-      alert('Please enter a longer description for AI analysis.');
+      setErrors(prev => ({ ...prev, description: 'Enter at least 10 characters for AI analysis.' }));
       return;
     }
 
     setIsAnalyzing(true);
+    setErrors(prev => ({ ...prev, description: null }));
     
     // Simulate complex "AI Processing" time to wow the user
     setTimeout(() => {
@@ -64,7 +99,9 @@ const TicketForm = ({ onSubmit, isLoading, initialData }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSubmit(formData, files);
+    if (validateForm()) {
+      onSubmit(formData, files);
+    }
   };
 
   const handleFileChange = (e) => {
@@ -96,12 +133,18 @@ const TicketForm = ({ onSubmit, isLoading, initialData }) => {
         <textarea 
           rows="4"
           placeholder="Describe the issue... (e.g. 'The projector in Block B room 201 is flickering and showing a red tint')"
-          className={`w-full px-4 py-3 rounded-xl border focus:ring-2 focus:ring-indigo-500 outline-none transition-all
-            ${showAiPulse ? 'border-emerald-400 ring-4 ring-emerald-50 bg-emerald-50/20' : 'border-slate-200'}`}
-          required
+          className={`w-full px-4 py-3 rounded-xl border focus:ring-2 outline-none transition-all
+            ${errors.description ? 'border-rose-400 ring-4 ring-rose-50' : 'border-slate-200 focus:ring-indigo-500'}
+            ${showAiPulse ? 'border-emerald-400 ring-4 ring-emerald-50 bg-emerald-50/20' : ''}`}
           value={formData.description}
-          onChange={(e) => setFormData({...formData, description: e.target.value})}
+          onChange={(e) => {
+            setFormData({...formData, description: e.target.value});
+            if (errors.description) setErrors({...errors, description: null});
+          }}
         ></textarea>
+        {errors.description && (
+          <p className="text-xs text-rose-500 font-medium ml-1 animate-in fade-in slide-in-from-top-1">{errors.description}</p>
+        )}
         {showAiPulse && (
           <div className="absolute top-10 right-3 bg-emerald-500 text-white text-[9px] px-2.5 py-1 rounded-full font-black animate-bounce shadow-lg shadow-emerald-200">
             🤖 AI SUGGESTED!
@@ -115,11 +158,17 @@ const TicketForm = ({ onSubmit, isLoading, initialData }) => {
           <input 
             type="text" 
             placeholder="e.g. Block A, Room 302"
-            className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none"
-            required
+            className={`w-full px-4 py-2.5 rounded-xl border outline-none transition-all
+              ${errors.location ? 'border-rose-400 ring-4 ring-rose-50' : 'border-slate-200 focus:ring-2 focus:ring-indigo-500'}`}
             value={formData.location}
-            onChange={(e) => setFormData({...formData, location: e.target.value})}
+            onChange={(e) => {
+              setFormData({...formData, location: e.target.value});
+              if (errors.location) setErrors({...errors, location: null});
+            }}
           />
+          {errors.location && (
+            <p className="text-xs text-rose-500 font-medium ml-1 animate-in fade-in slide-in-from-top-1">{errors.location}</p>
+          )}
         </div>
         <div className="space-y-2">
           <label className="text-sm font-semibold text-slate-700">Category</label>
@@ -171,10 +220,17 @@ const TicketForm = ({ onSubmit, isLoading, initialData }) => {
           <input 
             type="text" 
             placeholder="Email or Phone (e.g. 077...)"
-            className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none"
+            className={`w-full px-4 py-2.5 rounded-xl border outline-none transition-all
+              ${errors.preferredContact ? 'border-rose-400 ring-4 ring-rose-50' : 'border-slate-200 focus:ring-2 focus:ring-indigo-500'}`}
             value={formData.preferredContact}
-            onChange={(e) => setFormData({...formData, preferredContact: e.target.value})}
+            onChange={(e) => {
+              setFormData({...formData, preferredContact: e.target.value});
+              if (errors.preferredContact) setErrors({...errors, preferredContact: null});
+            }}
           />
+          {errors.preferredContact && (
+            <p className="text-xs text-rose-500 font-medium ml-1 animate-in fade-in slide-in-from-top-1">{errors.preferredContact}</p>
+          )}
         </div>
       </div>
 

@@ -12,6 +12,8 @@ import com.smartcampus.repository.TicketRepository;
 import com.smartcampus.repository.UserRepository;
 import com.smartcampus.service.NotificationService;
 import com.smartcampus.service.TicketService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
@@ -27,6 +29,7 @@ import java.util.stream.Collectors;
 
 @Service
 public class TicketServiceImpl implements TicketService {
+    private static final Logger logger = LoggerFactory.getLogger(TicketServiceImpl.class);
 
     private final TicketRepository ticketRepository;
     private final TicketCommentRepository commentRepository;
@@ -105,14 +108,19 @@ public class TicketServiceImpl implements TicketService {
     }
 
     private void populateUserNames(List<Ticket> tickets) {
+        Set<String> userIds = tickets.stream()
+                .map(Ticket::getCreatedById)
+                .filter(id -> id != null && !id.isEmpty())
+                .collect(Collectors.toSet());
+
+        if (userIds.isEmpty()) return;
+
+        Map<String, String> userMap = userRepository.findAllById(userIds).stream()
+                .collect(Collectors.toMap(com.smartcampus.model.User::getId, com.smartcampus.model.User::getName));
+
         tickets.forEach(ticket -> {
-            if (ticket.getCreatedById() != null && (ticket.getCreatedByName() == null || ticket.getCreatedByName().isEmpty())) {
-                try {
-                    userRepository.findById(ticket.getCreatedById())
-                            .ifPresent(user -> ticket.setCreatedByName(user.getName()));
-                } catch (Exception e) {
-                    // Ignore parsing errors for non-matching IDs
-                }
+            if (ticket.getCreatedByName() == null || ticket.getCreatedByName().isEmpty()) {
+                ticket.setCreatedByName(userMap.getOrDefault(ticket.getCreatedById(), "Unknown User"));
             }
         });
     }
@@ -171,7 +179,7 @@ public class TicketServiceImpl implements TicketService {
                     com.smartcampus.model.Notification.NotificationType.TICKET_STATUS,
                     saved.getId());
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Failed to send ticket status notification: {}", e.getMessage());
         }
 
         return saved;
@@ -193,7 +201,7 @@ public class TicketServiceImpl implements TicketService {
 
     @Override
     public TicketComment addComment(String ticketId, TicketCommentRequestDto commentReq) {
-        getTicketById(ticketId);
+        Ticket ticket = getTicketById(ticketId);
 
         TicketComment comment = TicketComment.builder()
                 .ticketId(ticketId)
@@ -207,7 +215,6 @@ public class TicketServiceImpl implements TicketService {
         TicketComment savedComment = commentRepository.save(comment);
 
         try {
-            Ticket ticket = getTicketById(ticketId);
             if (!ticket.getCreatedById().equals(commentReq.getAuthorId())) {
                 notificationService.createNotification(
                         ticket.getCreatedById(),
@@ -216,7 +223,7 @@ public class TicketServiceImpl implements TicketService {
                         ticketId);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Failed to send comment notification: {}", e.getMessage());
         }
 
         return savedComment;
@@ -255,11 +262,17 @@ public class TicketServiceImpl implements TicketService {
         Map<String, Object> analytics = new HashMap<>();
 
         analytics.put("statusDistribution",
-                tickets.stream().collect(Collectors.groupingBy(t -> t.getStatus().name(), Collectors.counting())));
+                tickets.stream()
+                        .filter(t -> t.getStatus() != null)
+                        .collect(Collectors.groupingBy(t -> t.getStatus().name(), Collectors.counting())));
         analytics.put("categoryDistribution",
-                tickets.stream().collect(Collectors.groupingBy(t -> t.getCategory().name(), Collectors.counting())));
+                tickets.stream()
+                        .filter(t -> t.getCategory() != null)
+                        .collect(Collectors.groupingBy(t -> t.getCategory().name(), Collectors.counting())));
         analytics.put("priorityDistribution",
-                tickets.stream().collect(Collectors.groupingBy(t -> t.getPriority().name(), Collectors.counting())));
+                tickets.stream()
+                        .filter(t -> t.getPriority() != null)
+                        .collect(Collectors.groupingBy(t -> t.getPriority().name(), Collectors.counting())));
 
         double avgResTime = tickets.stream()
                 .filter(t -> t.getResolvedAt() != null && t.getCreatedAt() != null)
