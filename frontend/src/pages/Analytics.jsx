@@ -1,4 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { FileText } from 'lucide-react';
+import PDFExportService from '../services/pdfExportService';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   PieChart, Pie, Cell
@@ -12,6 +14,8 @@ const Analytics = () => {
     const [data, setData] = useState(null);
     const [technicians, setTechnicians] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [exportingPDF, setExportingPDF] = useState(false);
+    const chartRefs = useRef([]);
 
     useEffect(() => {
         fetchAnalytics();
@@ -29,6 +33,18 @@ const Analytics = () => {
             console.error("Error fetching analytics:", error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleExportPDF = async () => {
+        setExportingPDF(true);
+        try {
+            await PDFExportService.exportAnalyticsToPDF(data, chartRefs);
+        } catch (error) {
+            console.error('PDF export failed:', error);
+            alert('Failed to generate PDF. Please try again.');
+        } finally {
+            setExportingPDF(false);
         }
     };
 
@@ -68,12 +84,27 @@ const Analytics = () => {
                     </h1>
                     <p className="text-slate-500 mt-1">Real-time performance and SLA tracking across campus facilities.</p>
                 </div>
-                <div className="bg-white px-4 py-2 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4">
-                    <div className="text-right">
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Global SLA</p>
-                        <p className="text-xl font-black text-emerald-500">94.2%</p>
+                <div className="flex items-center gap-4">
+                    <div className="bg-white px-4 py-2 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4">
+                        <div className="text-right">
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Global SLA</p>
+                            <p className="text-xl font-black text-emerald-500">94.2%</p>
+                        </div>
+                        <TrendingUp className="w-6 h-6 text-emerald-500" />
                     </div>
-                    <TrendingUp className="w-6 h-6 text-emerald-500" />
+                    
+                    <button
+                        onClick={handleExportPDF}
+                        disabled={exportingPDF}
+                        className="bg-red-600 text-white px-4 py-2 rounded-xl hover:bg-red-700 transition-all flex items-center gap-2 shadow-sm font-bold text-sm"
+                    >
+                        {exportingPDF ? (
+                            <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                        ) : (
+                            <FileText className="w-4 h-4" />
+                        )}
+                        {exportingPDF ? 'Generating...' : 'Export PDF Report'}
+                    </button>
                 </div>
             </div>
 
@@ -114,7 +145,7 @@ const Analytics = () => {
             {/* Charts Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* Status Distribution */}
-                <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
+                <div ref={el => chartRefs.current[0] = el} className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
                     <h3 className="text-lg font-bold text-slate-800 mb-8">Incident Status Distribution</h3>
                     <div className="h-[300px]">
                         <ResponsiveContainer width="100%" height="100%">
@@ -142,7 +173,7 @@ const Analytics = () => {
                 </div>
 
                 {/* Category Breakdown */}
-                <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
+                <div ref={el => chartRefs.current[1] = el} className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
                     <h3 className="text-lg font-bold text-slate-800 mb-8">Tickets by Category</h3>
                     <div className="h-[300px]">
                         <ResponsiveContainer width="100%" height="100%">
@@ -162,7 +193,7 @@ const Analytics = () => {
             </div>
 
             {/* Technician Workload */}
-            <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
+            <div ref={el => chartRefs.current[2] = el} className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
                 <h3 className="text-lg font-bold text-slate-800 mb-8 flex items-center gap-2">
                     Technician Workload
                     <span className="text-xs font-normal text-slate-400 font-sans tracking-normal">Number of assigned tickets per specialist</span>

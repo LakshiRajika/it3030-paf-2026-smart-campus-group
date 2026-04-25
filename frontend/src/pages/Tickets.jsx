@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import ticketService from '../services/ticketService';
 import { TicketForm, StatusBadge } from '../components/ticket/TicketForm';
 import { useAuth } from '../context/AuthContext';
@@ -10,20 +10,28 @@ import {
   Clock, 
   CheckCircle2, 
   Ticket as TicketIcon,
-  BarChart3,
-  ChevronRight 
+  ChevronRight,
+  X
 } from 'lucide-react';
 
 const Tickets = () => {
-  const goToTicketDetail = useNavigate();
+  const navigate = useNavigate();
   const [tickets, setTickets] = useState([]);
+  const [filteredTickets, setFilteredTickets] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [stats, setStats] = useState({ active: 0, resolved: 0, total: 0 });
+  
+  // Search and Filter States
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('ALL');
+  const [priorityFilter, setPriorityFilter] = useState('ALL');
+  const [showFilters, setShowFilters] = useState(false);
 
   const { user } = useAuth();
 
+  // Update stats
   const updateStats = useCallback((ticketList) => {
     const active = ticketList.filter(t => t.status === 'OPEN' || t.status === 'IN_PROGRESS').length;
     const resolved = ticketList.filter(t => t.status === 'RESOLVED' || t.status === 'CLOSED').length;
@@ -34,18 +42,20 @@ const Tickets = () => {
     });
   }, []);
 
-
+  // Fetch tickets
   const fetchTickets = useCallback(async () => {
     if (!user) return;
     try {
       setLoading(true);
       let data;
-      if (user.roles.some(r => r === 'ROLE_ADMIN' || r === 'ROLE_MANAGER' || (typeof r === 'object' && r.authority === 'ROLE_ADMIN'))) {
+      const isAdmin = user.roles?.some(r => r === 'ROLE_ADMIN' || r === 'ROLE_MANAGER' || r?.authority === 'ROLE_ADMIN');
+      if (isAdmin) {
         data = await ticketService.getAllTickets();
       } else {
         data = await ticketService.getMyTickets(user.sub);
       }
       setTickets(data);
+      setFilteredTickets(data);
       updateStats(data);
     } catch (err) {
       console.error(err);
@@ -58,6 +68,46 @@ const Tickets = () => {
   useEffect(() => {
     fetchTickets();
   }, [fetchTickets]);
+
+  // 🔍 SEARCH AND FILTER FUNCTION
+  const applyFilters = useCallback(() => {
+    let filtered = [...tickets];
+    
+    // Search by location or description
+    if (searchTerm.trim()) {
+      const term = searchTerm.toLowerCase();
+      filtered = filtered.filter(ticket => 
+        ticket.location?.toLowerCase().includes(term) ||
+        ticket.description?.toLowerCase().includes(term) ||
+        ticket.id?.toLowerCase().includes(term)
+      );
+    }
+    
+    // Filter by status
+    if (statusFilter !== 'ALL') {
+      filtered = filtered.filter(ticket => ticket.status === statusFilter);
+    }
+    
+    // Filter by priority
+    if (priorityFilter !== 'ALL') {
+      filtered = filtered.filter(ticket => ticket.priority === priorityFilter);
+    }
+    
+    setFilteredTickets(filtered);
+    updateStats(filtered);
+  }, [tickets, searchTerm, statusFilter, priorityFilter, updateStats]);
+
+  // Apply filters when dependencies change
+  useEffect(() => {
+    applyFilters();
+  }, [applyFilters]);
+
+  // Clear all filters
+  const clearFilters = () => {
+    setSearchTerm('');
+    setStatusFilter('ALL');
+    setPriorityFilter('ALL');
+  };
 
   const handleCreateTicket = async (formData, files) => {
     if (!user) {
@@ -83,6 +133,10 @@ const Tickets = () => {
       setIsSubmitting(false);
     }
   };
+
+  // Get unique statuses and priorities for filter buttons
+  const uniqueStatuses = ['ALL', ...new Set(tickets.map(t => t.status))];
+  const uniquePriorities = ['ALL', ...new Set(tickets.map(t => t.priority))];
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8 space-y-8">
@@ -113,58 +167,139 @@ const Tickets = () => {
               <p className="text-lg font-black text-slate-900 leading-tight">{stats.resolved}</p>
             </div>
           </div>
-
-          {(user.roles.some(r => r === 'ROLE_ADMIN' || r === 'ROLE_MANAGER' || (typeof r === 'object' && r.authority === 'ROLE_ADMIN'))) && (
-            <Link 
-              to="/admin/analytics" 
-              className="bg-slate-900 text-white px-6 py-3 rounded-2xl hover:bg-slate-800 transition-all flex items-center gap-3 shadow-lg shadow-slate-200"
-            >
-              <BarChart3 className="w-5 h-5" />
-              <span className="font-bold text-sm">Analytics</span>
-              <ChevronRight className="w-4 h-4 opacity-50" />
-            </Link>
-          )}
         </div>
       </div>
 
-      <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center pt-2">
-        <div className="flex gap-2">
+      {/* Search and Filter Bar */}
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-4">
+        <div className="flex flex-col md:flex-row gap-4">
+          {/* Search Input */}
+          <div className="flex-1 relative">
+            <Search className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input 
+              type="text" 
+              placeholder="Search by location, description, or ticket ID..."
+              className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm('')}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+          
+          {/* Filter Toggle Button */}
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className={`px-5 py-3 rounded-xl font-medium text-sm transition-all flex items-center gap-2 ${
+              showFilters || statusFilter !== 'ALL' || priorityFilter !== 'ALL'
+                ? 'bg-indigo-600 text-white shadow-md'
+                : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200'
+            }`}
+          >
+            <Filter className="w-4 h-4" />
+            Filters
+            {(statusFilter !== 'ALL' || priorityFilter !== 'ALL') && (
+              <span className="bg-white text-indigo-600 rounded-full w-5 h-5 text-xs flex items-center justify-center font-bold">
+                {(statusFilter !== 'ALL' ? 1 : 0) + (priorityFilter !== 'ALL' ? 1 : 0)}
+              </span>
+            )}
+          </button>
+          
+          {/* New Ticket Button */}
           {!showForm && (
             <button 
-              className="bg-indigo-600 text-white px-6 py-3 rounded-2xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 flex items-center gap-2"
+              className="bg-indigo-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 flex items-center gap-2"
               onClick={() => setShowForm(true)}
             >
               <Plus className="w-5 h-5" />
               New Ticket
             </button>
           )}
-          {showForm && (
-            <button 
-              className="bg-slate-100 text-slate-600 px-6 py-3 rounded-2xl font-bold hover:bg-slate-200 transition-all flex items-center gap-2"
-              onClick={() => setShowForm(false)}
-            >
-              Back to List
-            </button>
-          )}
         </div>
         
-        {!showForm && (
-          <div className="flex w-full md:w-auto gap-2">
-            <div className="relative flex-grow">
-              <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input 
-                type="text" 
-                placeholder="Search location..." 
-                className="w-full md:w-64 pl-11 pr-4 py-3 bg-white border border-slate-100 rounded-2xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none shadow-sm"
-              />
+        {/* Expanded Filters */}
+        {showFilters && (
+          <div className="mt-4 pt-4 border-t border-slate-100">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Status Filter */}
+              <div>
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Status</label>
+                <div className="flex flex-wrap gap-2">
+                  {uniqueStatuses.map(status => (
+                    <button
+                      key={status}
+                      onClick={() => setStatusFilter(status)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                        statusFilter === status
+                          ? 'bg-indigo-600 text-white shadow-md'
+                          : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
+                      }`}
+                    >
+                      {status === 'ALL' ? 'All Status' : status.replace('_', ' ')}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              
+              {/* Priority Filter */}
+              <div>
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Priority</label>
+                <div className="flex flex-wrap gap-2">
+                  {uniquePriorities.map(priority => (
+                    <button
+                      key={priority}
+                      onClick={() => setPriorityFilter(priority)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                        priorityFilter === priority
+                          ? 'bg-indigo-600 text-white shadow-md'
+                          : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
+                      }`}
+                    >
+                      {priority === 'ALL' ? 'All Priority' : priority}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
-            <button className="p-3 bg-white border border-slate-100 rounded-2xl text-slate-500 hover:bg-slate-50 shadow-sm">
-              <Filter className="w-5 h-5" />
-            </button>
+            
+            {/* Clear Filters Button */}
+            {(searchTerm || statusFilter !== 'ALL' || priorityFilter !== 'ALL') && (
+              <div className="mt-4 text-right">
+                <button
+                  onClick={clearFilters}
+                  className="text-sm text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1 ml-auto"
+                >
+                  <X className="w-3 h-3" />
+                  Clear all filters
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>
 
+      {/* Results Count */}
+      {!showForm && !loading && (
+        <div className="text-sm text-slate-500">
+          Found {filteredTickets.length} ticket{filteredTickets.length !== 1 ? 's' : ''}
+          {(searchTerm || statusFilter !== 'ALL' || priorityFilter !== 'ALL') && (
+            <button
+              onClick={clearFilters}
+              className="ml-2 text-indigo-600 hover:underline"
+            >
+              (Clear filters)
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Rest of your existing ticket display code... */}
       {showForm ? (
         <div className="max-w-3xl mx-auto bg-white rounded-3xl p-8 shadow-xl border border-slate-100">
           <div className="mb-8">
@@ -181,29 +316,43 @@ const Tickets = () => {
                 <div key={i} className="bg-slate-100 animate-pulse h-64 rounded-2xl shadow-sm border border-slate-200"></div>
               ))}
             </div>
-          ) : tickets.length === 0 ? (
+          ) : filteredTickets.length === 0 ? (
             <div className="text-center py-20 bg-slate-50 rounded-[2.5rem] border-2 border-dashed border-slate-200">
               <div className="bg-white w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
                 <TicketIcon className="w-10 h-10 text-slate-300" />
               </div>
-              <h3 className="text-lg font-bold text-slate-800">No Tickets Yet</h3>
-              <p className="text-slate-500 mb-6">You haven't reported any incidents yet.</p>
-              <button 
-                onClick={() => setShowForm(true)}
-                className="text-indigo-600 font-bold hover:underline"
-              >
-                Create your first ticket
-              </button>
+              <h3 className="text-lg font-bold text-slate-800">No Tickets Found</h3>
+              <p className="text-slate-500 mb-6">
+                {searchTerm || statusFilter !== 'ALL' || priorityFilter !== 'ALL'
+                  ? "No tickets match your search criteria."
+                  : "You haven't reported any incidents yet."}
+              </p>
+              {(searchTerm || statusFilter !== 'ALL' || priorityFilter !== 'ALL') ? (
+                <button 
+                  onClick={clearFilters}
+                  className="text-indigo-600 font-bold hover:underline"
+                >
+                  Clear Filters
+                </button>
+              ) : (
+                <button 
+                  onClick={() => setShowForm(true)}
+                  className="text-indigo-600 font-bold hover:underline"
+                >
+                  Create your first ticket
+                </button>
+              )}
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {tickets.map((ticket) => (
+              {filteredTickets.map((ticket) => (
                 <div key={ticket.id} className="group bg-white rounded-3xl p-6 shadow-sm border border-slate-100 hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
                   <div className="flex justify-between items-start mb-4">
                     <StatusBadge status={ticket.status} />
                     <span className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase ${
                       ticket.priority === 'CRITICAL' ? 'bg-rose-50 text-rose-600' : 
                       ticket.priority === 'HIGH' ? 'bg-orange-50 text-orange-600' :
+                      ticket.priority === 'MEDIUM' ? 'bg-yellow-50 text-yellow-600' :
                       'text-slate-400'
                     }`}>
                       {ticket.priority} Priority
@@ -219,7 +368,7 @@ const Tickets = () => {
                        <span className="text-[10px] font-bold uppercase">{new Date(ticket.createdAt).toLocaleDateString()}</span>
                     </div>
                     <button 
-                      onClick={() => goToTicketDetail(`/tickets/${ticket.id}`)}
+                      onClick={() => navigate(`/tickets/${ticket.id}`)}
                       className="text-indigo-600 text-sm font-bold group-hover:translate-x-1 transition-transform flex items-center gap-1"
                     >
                       View Details

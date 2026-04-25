@@ -4,6 +4,8 @@ import ticketService from '../services/ticketService';
 import { StatusBadge, TicketForm } from '../components/ticket/TicketForm';
 import { useAuth } from '../context/AuthContext';
 import { useCallback } from 'react';
+import { FileText } from 'lucide-react';
+import PDFExportService from '../services/pdfExportService';
 
 const TicketDetail = () => {
   const { id } = useParams();
@@ -15,6 +17,7 @@ const TicketDetail = () => {
   const [submitting, setSubmitting] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [statusUpdating, setStatusUpdating] = useState(false);
+  const [exportingPDF, setExportingPDF] = useState(false);
   const [technicians, setTechnicians] = useState([]);
 
   const { user, hasRole } = useAuth();
@@ -109,6 +112,18 @@ const TicketDetail = () => {
     }
   };
 
+  const handleExportPDF = async () => {
+    setExportingPDF(true);
+    try {
+        await PDFExportService.exportSingleTicketToPDF(ticket, comments);
+    } catch (error) {
+        console.error('PDF export failed:', error);
+        alert('Failed to generate PDF. Please try again.');
+    } finally {
+        setExportingPDF(false);
+    }
+  };
+
   const handleAddComment = async (e) => {
     e.preventDefault();
     if (!newComment.trim()) return;
@@ -152,6 +167,19 @@ const TicketDetail = () => {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
           </svg>
           Back to List
+        </button>
+
+        <button
+            onClick={handleExportPDF}
+            disabled={exportingPDF}
+            className="bg-red-600 text-white px-4 py-2 rounded-xl hover:bg-red-700 transition-all flex items-center gap-2 shadow-sm font-bold text-sm disabled:opacity-50"
+        >
+            {exportingPDF ? (
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+            ) : (
+                <FileText className="w-4 h-4" />
+            )}
+            {exportingPDF ? 'Generating...' : 'Export PDF'}
         </button>
 
         {user && user.sub === ticket.createdById && (
