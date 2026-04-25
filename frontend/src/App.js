@@ -1,5 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, NavLink } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
 import Tickets from './pages/Tickets';
 import TicketDetail from './pages/TicketDetail';
 import Dashboard from './pages/Dashboard';
@@ -13,6 +14,7 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import ProtectedRoute from './components/Common/ProtectedRoute';
 import Bookings from './pages/Bookings';
 import ManageBookings from './pages/admin/ManageBookings';
+import BookingAnalytics from './pages/admin/BookingAnalytics';
 import ManageTickets from './pages/admin/ManageTickets';
 import ManageResources from './pages/admin/ManageResources';
 import CheckInVerification from './pages/CheckInVerification';
@@ -115,6 +117,7 @@ const DashboardRoute = () => {
 function App() {
   return (
     <AuthProvider>
+      <Toaster position="top-right" reverseOrder={false} />
       <Router>
         <Layout>
           <Routes>
@@ -150,6 +153,12 @@ function App() {
             <Route path="/admin/bookings" element={
               <ProtectedRoute roles={['ADMIN']}>
                 <ManageBookings />
+              </ProtectedRoute>
+            } />
+
+            <Route path="/admin/booking-analytics" element={
+              <ProtectedRoute roles={['ADMIN']}>
+                <BookingAnalytics />
               </ProtectedRoute>
             } />
 

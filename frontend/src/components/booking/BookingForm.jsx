@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Calendar, Clock, Users, FileText, AlertCircle, CheckCircle, Loader } from 'lucide-react';
+import toast from 'react-hot-toast';
 import bookingService from '../../services/bookingService';
 import resourceService from '../../services/resourceService';
 
@@ -37,14 +38,20 @@ const BookingForm = ({ onClose, onSuccess, existingBooking = null }) => {
         setConflictCheck('checking');
         const timer = setTimeout(async () => {
             try {
-                const result = await bookingService.checkConflict(resourceId, date, startTime, endTime);
+                const result = await bookingService.checkConflict(
+                    resourceId, 
+                    date, 
+                    startTime, 
+                    endTime, 
+                    existingBooking?.id
+                );
                 setConflictCheck(result.hasConflict ? 'conflict' : 'available');
             } catch {
                 setConflictCheck(null);
             }
         }, 600);
         return () => clearTimeout(timer);
-    }, [form]);
+    }, [form, existingBooking?.id]);
 
     const validate = () => {
         const e = {};
@@ -64,7 +71,11 @@ const BookingForm = ({ onClose, onSuccess, existingBooking = null }) => {
         } else if (form.date === localToday) {
             // Allow 30 mins grace period in frontend too to avoid frustration
             const thirtyMinsAgo = new Date(now.getTime() - 30 * 60000);
-            const graceTime = thirtyMinsAgo.toTimeString().slice(0, 5);
+            // If the grace period pushed us to yesterday, the minimum time for today is 00:00
+            const graceTime = thirtyMinsAgo.toLocaleDateString('en-CA') === localToday 
+                ? thirtyMinsAgo.toTimeString().slice(0, 5) 
+                : '00:00';
+            
             if (form.startTime < graceTime) {
                 e.startTime = 'Start time is too far in the past';
             }
@@ -120,14 +131,17 @@ const BookingForm = ({ onClose, onSuccess, existingBooking = null }) => {
             let result;
             if (isEditMode) {
                 result = await bookingService.updateBooking(existingBooking.id, payload);
+                toast.success('Booking updated successfully!');
             } else {
                 result = await bookingService.createBooking(payload);
+                toast.success('Booking request submitted successfully!');
             }
             onSuccess(result);
         } catch (err) {
             console.error('Booking failed:', err);
             const msg = err?.response?.data?.message || err?.message || 'Failed to create booking. Please try again.';
             setApiError(msg);
+            toast.error(msg);
         } finally {
             setSubmitting(false);
         }

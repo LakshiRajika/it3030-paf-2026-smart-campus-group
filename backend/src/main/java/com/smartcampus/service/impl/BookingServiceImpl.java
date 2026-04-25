@@ -2,6 +2,7 @@ package com.smartcampus.service.impl;
 
 import com.smartcampus.dto.request.BookingRequest;
 import com.smartcampus.dto.request.BookingStatusUpdateRequest;
+import com.smartcampus.dto.response.BookingAnalyticsResponse;
 import com.smartcampus.dto.response.BookingResponse;
 import com.smartcampus.exception.ConflictException;
 import com.smartcampus.exception.ResourceNotFoundException;
@@ -18,6 +19,8 @@ import com.smartcampus.repository.ResourceRepository;
 import com.smartcampus.repository.UserRepository;
 import com.smartcampus.service.BookingService;
 import com.smartcampus.service.NotificationService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -25,11 +28,15 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeParseException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
 public class BookingServiceImpl implements BookingService {
+
+    private static final Logger logger = LoggerFactory.getLogger(BookingServiceImpl.class);
 
     @Autowired
     private BookingRepository bookingRepository;
@@ -321,6 +328,67 @@ public class BookingServiceImpl implements BookingService {
         }
 
         return toResponse(saved);
+    }
+
+    @Override
+    public BookingAnalyticsResponse getAnalytics() {
+        logger.debug("Generating booking analytics report...");
+        try {
+            List<Booking> allBookings = bookingRepository.findAll();
+            logger.debug("Found {} total bookings", allBookings.size());
+            BookingAnalyticsResponse stats = new BookingAnalyticsResponse();
+
+            stats.setTotalBookings(allBookings.size());
+
+            Map<String, Long> statusDist = new HashMap<>();
+            Map<String, Long> resourceDist = new HashMap<>();
+            Map<Integer, Long> hourDist = new HashMap<>();
+
+            long approvedOrCheckedInCount = 0;
+            long checkedInCount = 0;
+
+            for (Booking b : allBookings) {
+                // Status distribution
+                String status = b.getStatus().name();
+                statusDist.put(status, statusDist.getOrDefault(status, 0L) + 1);
+
+                // Consider both APPROVED and checked-in as "approved" for rate purposes
+                if (b.getStatus() == BookingStatus.APPROVED || b.isCheckedIn()) {
+                    approvedOrCheckedInCount++;
+                }
+                if (b.isCheckedIn()) {
+                    checkedInCount++;
+                }
+
+                // Resource utilization
+                if (b.getResource() != null) {
+                    String name = b.getResource().getName();
+                    resourceDist.put(name, resourceDist.getOrDefault(name, 0L) + 1);
+                }
+
+                // Hourly distribution
+                if (b.getStartTime() != null) {
+                    int hour = b.getStartTime().getHour();
+                    hourDist.put(hour, hourDist.getOrDefault(hour, 0L) + 1);
+                }
+            }
+
+            stats.setStatusDistribution(statusDist);
+            stats.setResourceUtilization(resourceDist);
+            stats.setHourlyDistribution(hourDist);
+
+            if (stats.getTotalBookings() > 0) {
+                stats.setApprovalRate((double) approvedOrCheckedInCount / stats.getTotalBookings() * 100);
+            }
+            if (approvedOrCheckedInCount > 0) {
+                stats.setCheckInRate((double) checkedInCount / approvedOrCheckedInCount * 100);
+            }
+
+            return stats;
+        } catch (Exception e) {
+            logger.error("Error generating analytics: ", e);
+            throw new RuntimeException("Failed to generate analytics dashboard data", e);
+        }
     }
 
     // ─── Conflict Detection ──────────────────────────────────────────────────────

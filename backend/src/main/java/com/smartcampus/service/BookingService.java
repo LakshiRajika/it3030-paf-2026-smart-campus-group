@@ -2,6 +2,7 @@ package com.smartcampus.service;
 
 import com.smartcampus.dto.request.BookingRequest;
 import com.smartcampus.dto.request.BookingStatusUpdateRequest;
+import com.smartcampus.dto.response.BookingAnalyticsResponse;
 import com.smartcampus.dto.response.BookingResponse;
 import com.smartcampus.model.enums.BookingStatus;
 
@@ -23,6 +24,7 @@ public interface BookingService {
     List<BookingResponse> getAllBookingsByResource(String resourceId);
     List<BookingResponse> getUpcomingBookingsByResource(String resourceId, int days);
     BookingResponse updateBookingStatus(String bookingId, BookingStatusUpdateRequest request, String adminId);
+    BookingAnalyticsResponse getAnalytics();
 
     // Admin/Technician operations
     BookingResponse verifyAndCheckIn(String bookingId);

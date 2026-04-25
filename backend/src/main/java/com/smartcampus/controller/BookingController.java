@@ -2,6 +2,7 @@ package com.smartcampus.controller;
 
 import com.smartcampus.dto.request.BookingRequest;
 import com.smartcampus.dto.request.BookingStatusUpdateRequest;
+import com.smartcampus.dto.response.BookingAnalyticsResponse;
 import com.smartcampus.dto.response.BookingResponse;
 import com.smartcampus.model.enums.BookingStatus;
 import com.smartcampus.security.CustomUserDetails;
@@ -130,13 +131,14 @@ public class BookingController {
             @RequestParam String resourceId,
             @RequestParam String date,
             @RequestParam String startTime,
-            @RequestParam String endTime) {
+            @RequestParam String endTime,
+            @RequestParam(required = false) String excludeId) {
 
         java.time.LocalDate localDate = java.time.LocalDate.parse(date);
         java.time.LocalTime start = java.time.LocalTime.parse(startTime);
         java.time.LocalTime end = java.time.LocalTime.parse(endTime);
 
-        boolean conflict = bookingService.hasConflict(resourceId, localDate, start, end, null);
+        boolean conflict = bookingService.hasConflict(resourceId, localDate, start, end, excludeId);
 
         return ResponseEntity.ok(Map.of(
                 "hasConflict", conflict,
@@ -180,6 +182,17 @@ public class BookingController {
             @PathVariable String resourceId,
             @RequestParam(defaultValue = "7") int days) {
         return ResponseEntity.ok(bookingService.getUpcomingBookingsByResource(resourceId, days));
+    }
+
+    /**
+     * GET /api/bookings/analytics
+     * Get aggregated booking statistics for the admin dashboard.
+     */
+    @GetMapping("/analytics")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<BookingAnalyticsResponse> getAnalytics() {
+        BookingAnalyticsResponse response = bookingService.getAnalytics();
+        return ResponseEntity.ok(response);
     }
 
     /**

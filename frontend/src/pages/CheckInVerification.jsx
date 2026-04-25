@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { CheckCircle, XCircle, Loader2, Calendar, MapPin, User, Clock, ArrowLeft, QrCode } from 'lucide-react';
+import toast from 'react-hot-toast';
 import bookingService from '../services/bookingService';
 
 const CheckInVerification = () => {
@@ -22,9 +23,12 @@ const CheckInVerification = () => {
         try {
             const data = await bookingService.checkInPublic(bookingId, token, pin);
             setResult(data);
+            toast.success('Check-in verified successfully!');
         } catch (err) {
             console.error('Check-in error:', err);
-            setError(err.response?.data?.message || 'Verification failed. Please check the PIN and ensure the QR is valid.');
+            const msg = err.response?.data?.message || 'Verification failed. Please check the PIN and ensure the QR is valid.';
+            setError(msg);
+            toast.error(msg);
         } finally {
             setIsVerifying(false);
         }

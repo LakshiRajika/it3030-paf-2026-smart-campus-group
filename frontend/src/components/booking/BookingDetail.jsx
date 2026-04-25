@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Calendar, Clock, Users, FileText, MapPin, CheckCircle, XCircle, AlertCircle, Loader, QrCode } from 'lucide-react';
 import { QRCodeCanvas } from 'qrcode.react';
+import toast from 'react-hot-toast';
 import bookingService from '../../services/bookingService';
 
 const STATUS_COLORS = {
@@ -56,10 +57,13 @@ const BookingDetail = ({ booking: initialBooking, isAdmin, onClose, onUpdated })
                 status,
                 status === 'REJECTED' ? rejectionReason : null
             );
+            toast.success(`Booking ${status === 'APPROVED' ? 'approved' : 'rejected'} successfully!`);
             onUpdated(updated);
             onClose();
         } catch (err) {
-            setError(err?.response?.data?.message || 'Action failed. Please try again.');
+            const msg = err?.response?.data?.message || 'Action failed. Please try again.';
+            setError(msg);
+            toast.error(msg);
         } finally {
             setLoading(false);
         }
@@ -70,13 +74,68 @@ const BookingDetail = ({ booking: initialBooking, isAdmin, onClose, onUpdated })
         setError('');
         try {
             const updated = await bookingService.cancelBooking(booking.id);
+            toast.success('Booking cancelled successfully.');
             onUpdated(updated);
             onClose();
         } catch (err) {
-            setError(err?.response?.data?.message || 'Cancel failed. Please try again.');
+            const msg = err?.response?.data?.message || 'Cancel failed. Please try again.';
+            setError(msg);
+            toast.error(msg);
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleDownloadICS = () => {
+        const { date, startTime, endTime, resourceName, purpose, resourceLocation, id } = booking;
+
+        // Convert Local Time to UTC String: YYYYMMDDTHHMMSSZ
+        const formatToUTC = (dateStr, timeStr) => {
+            try {
+                const localDate = new Date(`${dateStr}T${timeStr}`);
+                return localDate.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+            } catch (e) {
+                // Fallback to basic format if date is invalid
+                return dateStr.replace(/-/g, '') + 'T' + timeStr.replace(/:/g, '') + '00Z';
+            }
+        };
+
+        const dtStart = formatToUTC(date, startTime);
+        const dtEnd = formatToUTC(date, endTime);
+        const now = new Date().toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+
+        const icsContent = [
+            'BEGIN:VCALENDAR',
+            'VERSION:2.0',
+            'PRODID:-//Smart Campus//Operations Hub//EN',
+            'CALSCALE:GREGORIAN',
+            'METHOD:REQUEST',
+            'BEGIN:VEVENT',
+            `UID:${id}@smartcampus.com`,
+            `DTSTAMP:${now}`,
+            `DTSTART:${dtStart}`,
+            `DTEND:${dtEnd}`,
+            `SUMMARY:${resourceName} Booking${isAdmin ? ` (${booking.userName})` : ''}`,
+            `DESCRIPTION:Purpose: ${purpose.replace(/\n/g, '\\n')}`,
+            `LOCATION:${resourceLocation}`,
+            `ORGANIZER;CN=Smart Campus:MAILTO:noreply@smartcampus.com`,
+            `ATTENDEE;RSVP=TRUE;CN=User:MAILTO:user@smartcampus.com`,
+            'STATUS:CONFIRMED',
+            'SEQUENCE:0',
+            'TRANSP:OPAQUE',
+            'END:VEVENT',
+            'END:VCALENDAR'
+        ].join('\r\n');
+
+        const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `booking_${id}.ics`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        toast.success('Calendar file (.ics) downloaded!');
     };
 
     return (
@@ -163,6 +222,17 @@ const BookingDetail = ({ booking: initialBooking, isAdmin, onClose, onUpdated })
                         </div>
                     )}
 
+                    {/* Add to Calendar Button */}
+                    {!isAdmin && booking.status === 'APPROVED' && (
+                        <button
+                            onClick={handleDownloadICS}
+                            className="w-full flex items-center justify-center gap-2 py-3 bg-white text-slate-700 font-bold rounded-xl hover:bg-slate-50 transition-all border border-slate-200 shadow-sm"
+                        >
+                            <Calendar size={18} className="text-indigo-500" />
+                            Add to My Personal Calendar (.ics)
+                        </button>
+                    )}
+
                     {/* QR Code Section */}
                     {booking.status === 'APPROVED' && !booking.checkedIn && (
                         <div className="pt-4 border-t border-slate-100">
@@ -195,9 +265,9 @@ const BookingDetail = ({ booking: initialBooking, isAdmin, onClose, onUpdated })
                                     <p className="text-xs text-slate-500 mt-1 px-4 leading-relaxed">
                                         Present this code at the facility entrance for verification by staff.
                                     </p>
-                                    
+
                                     {/* Simulation Link for Desktop Testing */}
-                                    <a 
+                                    <a
                                         href={`/verify-checkin/${booking.id}?token=${booking.checkInToken}`}
                                         target="_blank"
                                         rel="noopener noreferrer"
