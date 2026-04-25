@@ -13,4 +13,6 @@ public interface TicketRepository extends MongoRepository<Ticket, String> {
     List<Ticket> findAllByCreatedById(String createdById);
     List<Ticket> findByAssignedToId(String assignedToId);
     List<Ticket> findByStatus(TicketStatus status);
+    void deleteByCreatedById(String createdById);
+    long countByCreatedById(String createdById);
 }

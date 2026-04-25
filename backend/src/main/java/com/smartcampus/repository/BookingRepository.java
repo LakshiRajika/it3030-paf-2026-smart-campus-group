@@ -15,6 +15,8 @@ public interface BookingRepository extends MongoRepository<Booking, String> {
 
     // Find all bookings by a specific user
     List<Booking> findByUserId(String userId);
+    void deleteByUserId(String userId);
+    long countByUserId(String userId);
 
     // Find all bookings by status
     List<Booking> findByStatus(BookingStatus status);
