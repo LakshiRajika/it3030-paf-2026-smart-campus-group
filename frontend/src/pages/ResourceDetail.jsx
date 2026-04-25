@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import { AlertCircle } from "lucide-react";
 import resourceService from "../services/resourceService";
 import bookingService from "../services/bookingService";
+import ticketService from "../services/ticketService";
+import { useAuth } from "../context/AuthContext";
 
 const WEEK = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const DAY_NAMES = ["SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"];
@@ -20,8 +23,11 @@ const toLocalIsoDate = (date) => {
 
 export default function ResourceDetail() {
   const { id } = useParams();
+  const { hasRole } = useAuth();
+  const isAdmin = hasRole("ADMIN");
   const [resource, setResource] = useState(null);
   const [upcomingBookings, setUpcomingBookings] = useState([]);
+  const [activeTicket, setActiveTicket] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -36,6 +42,25 @@ export default function ResourceDetail() {
         ]);
         setResource(resourceData);
         setUpcomingBookings(bookingsData || []);
+
+        if (resourceData.status === "OUT_OF_SERVICE" && isAdmin) {
+          try {
+            const allTickets = await ticketService.getAllTickets();
+            const ticket = allTickets.find(t => {
+              if (!t.location) return false;
+              const tLoc = t.location.toLowerCase().trim();
+              const rName = (resourceData.name || "").toLowerCase().trim();
+              const rLoc = (resourceData.location || "").toLowerCase().trim();
+              return (tLoc === rName || tLoc === rLoc || tLoc.includes(rName) || rName.includes(tLoc)) && 
+                     (t.status === 'OPEN' || t.status === 'IN_PROGRESS');
+            });
+            if (ticket) {
+              setActiveTicket(ticket);
+            }
+          } catch (err) {
+            console.error("Failed to fetch tickets for maintenance banner");
+          }
+        }
       } catch (e) {
         setError(e?.response?.data?.error || "Failed to load resource details.");
       } finally {
@@ -43,7 +68,7 @@ export default function ResourceDetail() {
       }
     };
     run();
-  }, [id]);
+  }, [id, isAdmin]);
 
   if (loading) return <div className="max-w-5xl mx-auto px-4 py-8 text-slate-500">Loading details...</div>;
   if (error) return <div className="max-w-5xl mx-auto px-4 py-8 text-rose-700 font-semibold">{error}</div>;
@@ -107,6 +132,30 @@ export default function ResourceDetail() {
                 {resource.status === "ACTIVE" ? "🟢 Available" : "🔴 Out of Service"}
               </span>
             </p>
+
+            {resource.status === "OUT_OF_SERVICE" && activeTicket && (
+              <div className="mt-4 p-3 rounded-xl bg-rose-50 border border-rose-200 flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
+                <div>
+                  <h3 className="text-sm font-bold text-rose-900">Currently under maintenance</h3>
+                  <p className="text-xs text-rose-700 mt-0.5">
+                    Ticket: <Link to={`/tickets/${activeTicket.id}`} className="underline hover:text-rose-900">{activeTicket.category} - {activeTicket.description.substring(0, 40)}...</Link>
+                  </p>
+                </div>
+              </div>
+            )}
+            
+            {resource.status === "OUT_OF_SERVICE" && !activeTicket && (
+               <div className="mt-4 p-3 rounded-xl bg-amber-50 border border-amber-200 flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                <div>
+                  <h3 className="text-sm font-bold text-amber-900">Currently under maintenance</h3>
+                  <p className="text-xs text-amber-700 mt-0.5">
+                    This resource is temporarily unavailable. 
+                  </p>
+                </div>
+              </div>
+            )}
 
             <div className="mt-4">
               <h2 className="font-bold text-slate-900">Amenities</h2>

@@ -1,6 +1,9 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { CalendarCheck2, Wrench, Building2, Clock3, Loader } from 'lucide-react';
+import { CalendarCheck2, Wrench, Building2, Clock3, Loader, TrendingUp, AlertCircle, ArrowRight, ShieldCheck, CheckCircle2, XCircle, Download } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 import bookingService from '../../services/bookingService';
 import ticketService from '../../services/ticketService';
 import resourceService from '../../services/resourceService';
@@ -14,29 +17,31 @@ const RANGE_OPTIONS = [
 const adminModules = [
   {
     title: 'Manage Bookings',
-    description: 'Review, approve, and reject all booking requests.',
+    description: 'Review and approve requests.',
     icon: CalendarCheck2,
     link: '/admin/bookings',
-    badge: 'Module B',
-    color: 'bg-indigo-600',
+    color: 'from-indigo-500 to-blue-500',
+    shadow: 'shadow-indigo-200'
   },
   {
     title: 'Manage Tickets',
-    description: 'Track maintenance incidents and assign updates.',
+    description: 'Track maintenance incidents.',
     icon: Wrench,
     link: '/admin/tickets',
-    badge: 'Module C',
-    color: 'bg-emerald-600',
+    color: 'from-emerald-500 to-teal-500',
+    shadow: 'shadow-emerald-200'
   },
   {
     title: 'Manage Resources',
-    description: 'Maintain facilities and assets catalogue records.',
+    description: 'Update facilities and assets.',
     icon: Building2,
     link: '/admin/resources',
-    badge: 'Module A',
-    color: 'bg-amber-500',
+    color: 'from-amber-500 to-orange-500',
+    shadow: 'shadow-amber-200'
   },
 ];
+
+const COLORS = ['#6366f1', '#8b5cf6', '#ec4899', '#10b981', '#f59e0b'];
 
 const AdminDashboard = () => {
   const [resources, setResources] = useState([]);
@@ -45,6 +50,8 @@ const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [dateRange, setDateRange] = useState('30d');
+  const [isExporting, setIsExporting] = useState(false);
+  const dashboardRef = useRef(null);
 
   useEffect(() => {
     const fetchAnalytics = async () => {
@@ -102,25 +109,10 @@ const AdminDashboard = () => {
     });
   }, [tickets, dateRange]);
 
-  const pendingBookings = useMemo(
-    () => filteredBookings.filter((booking) => booking.status === 'PENDING').length,
-    [filteredBookings]
-  );
-
-  const approvedBookings = useMemo(
-    () => filteredBookings.filter((booking) => booking.status === 'APPROVED').length,
-    [filteredBookings]
-  );
-
-  const rejectedBookings = useMemo(
-    () => filteredBookings.filter((booking) => booking.status === 'REJECTED').length,
-    [filteredBookings]
-  );
-
-  const openTickets = useMemo(
-    () => filteredTickets.filter((ticket) => ['OPEN', 'IN_PROGRESS'].includes(ticket.status)).length,
-    [filteredTickets]
-  );
+  const pendingBookings = useMemo(() => filteredBookings.filter((booking) => booking.status === 'PENDING').length, [filteredBookings]);
+  const approvedBookings = useMemo(() => filteredBookings.filter((booking) => booking.status === 'APPROVED').length, [filteredBookings]);
+  const rejectedBookings = useMemo(() => filteredBookings.filter((booking) => booking.status === 'REJECTED').length, [filteredBookings]);
+  const openTickets = useMemo(() => filteredTickets.filter((ticket) => ['OPEN', 'IN_PROGRESS'].includes(ticket.status)).length, [filteredTickets]);
 
   const topResources = useMemo(() => {
     const usageCount = new Map();
@@ -130,8 +122,8 @@ const AdminDashboard = () => {
     });
 
     return Array.from(usageCount.entries())
-      .map(([name, count]) => ({ name, count }))
-      .sort((a, b) => b.count - a.count)
+      .map(([name, count]) => ({ name, value: count }))
+      .sort((a, b) => b.value - a.value)
       .slice(0, 5);
   }, [filteredBookings]);
 
@@ -144,199 +136,283 @@ const AdminDashboard = () => {
     });
 
     return Array.from(hourUsage.entries())
-      .map(([hour, count]) => ({ hour, count }))
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 5);
+      .map(([hour, count]) => ({ 
+        name: `${hour}:00`, 
+        Bookings: count 
+      }))
+      .sort((a, b) => parseInt(a.name) - parseInt(b.name));
   }, [filteredBookings]);
 
-  const peakHourMax = useMemo(() => {
-    if (!peakHours.length) return 1;
-    return Math.max(...peakHours.map((item) => item.count), 1);
-  }, [peakHours]);
+  const recentActivity = useMemo(() => {
+    const pending = filteredBookings
+        .filter(b => b.status === 'PENDING')
+        .map(b => ({ id: b.id || b._id, type: 'booking', title: `Booking: ${b.resourceName || 'Resource'}`, date: b.createdAt || b.date, link: '/admin/bookings' }));
+    
+    const open = filteredTickets
+        .filter(t => t.status === 'OPEN')
+        .map(t => ({ id: t.id || t._id, type: 'ticket', title: `Ticket: ${t.title || 'Maintenance Issue'}`, date: t.createdAt, link: '/admin/tickets' }));
+    
+    return [...pending, ...open]
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      .slice(0, 5);
+  }, [filteredBookings, filteredTickets]);
+
+  const handleExportPDF = async () => {
+    if (!dashboardRef.current) return;
+    setIsExporting(true);
+    try {
+      const canvas = await html2canvas(dashboardRef.current, { 
+        scale: 2, 
+        useCORS: true,
+        backgroundColor: '#ffffff'
+      });
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const imgWidth = 210;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      
+      pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+      pdf.save(`admin_report_${new Date().toISOString().split('T')[0]}.pdf`);
+    } catch (err) {
+      console.error('PDF Export Error:', err);
+      setError('Failed to export PDF.');
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-10">
-      <div className="mb-10">
-        <span className="inline-flex px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 text-xs font-bold border border-indigo-100 uppercase tracking-wider">
-          Admin Portal
-        </span>
-        <h1 className="mt-3 text-3xl font-black text-slate-900 tracking-tight">Admin Dashboard</h1>
-        <p className="mt-2 text-slate-500">
-          Central access for administrative operations in the Smart Campus system.
-        </p>
+    <div className="max-w-7xl mx-auto px-4 py-8 space-y-8 animate-fade-in" ref={dashboardRef}>
+      
+      {/* Premium Header */}
+      <div className="relative rounded-3xl overflow-hidden bg-slate-900 shadow-xl border border-slate-800">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-indigo-500/30 via-fuchsia-500/20 to-transparent blur-3xl rounded-full translate-x-1/3 -translate-y-1/3" />
+        <div className="relative p-8 md:p-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+          <div className="space-y-3">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-white text-xs font-bold uppercase tracking-wider border border-white/20">
+              <ShieldCheck className="w-4 h-4 text-emerald-400" />
+              Administrator Access
+            </div>
+            <h1 className="text-3xl md:text-4xl font-black text-white tracking-tight">System Analytics</h1>
+            <p className="text-slate-400 text-sm max-w-xl">
+              Monitor campus resources, manage approvals, and track maintenance efficiency.
+            </p>
+          </div>
+          
+          <div className="flex flex-col gap-2 w-full md:w-auto">
+            <div className="flex items-center justify-between mb-1">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Date Range:</span>
+                <button 
+                    onClick={handleExportPDF}
+                    disabled={isExporting}
+                    className="flex items-center gap-1.5 text-xs font-bold text-indigo-400 hover:text-indigo-300 transition-colors disabled:opacity-50"
+                    data-html2canvas-ignore="true"
+                >
+                    {isExporting ? <Loader className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+                    Export PDF
+                </button>
+            </div>
+            <div className="flex bg-white/10 p-1 rounded-xl border border-white/10 backdrop-blur-md" data-html2canvas-ignore="true">
+              {RANGE_OPTIONS.map((option) => (
+                <button
+                  key={option.id}
+                  onClick={() => setDateRange(option.id)}
+                  className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+                    dateRange === option.id
+                      ? 'bg-indigo-600 text-white shadow-lg'
+                      : 'text-slate-300 hover:text-white hover:bg-white/5'
+                  }`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
-
-      <div className="mb-6 flex flex-wrap items-center gap-2">
-        <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Analytics Range:</span>
-        {RANGE_OPTIONS.map((option) => (
-          <button
-            key={option.id}
-            onClick={() => setDateRange(option.id)}
-            className={`px-3 py-1.5 rounded-full text-xs font-bold border transition-all ${
-              dateRange === option.id
-                ? 'bg-indigo-600 text-white border-indigo-600'
-                : 'bg-white text-slate-600 border-slate-200 hover:border-indigo-300'
-            }`}
-          >
-            {option.label}
-          </button>
-        ))}
-      </div>
-      <p className="mb-6 text-xs font-semibold text-slate-500">
-        Showing analytics for:{' '}
-        <span className="text-indigo-700">
-          {RANGE_OPTIONS.find((option) => option.id === dateRange)?.label || 'Selected range'}
-        </span>
-      </p>
 
       {error && (
-        <div className="mb-6 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-rose-700 text-sm font-semibold">
-          {error}
+        <div className="rounded-2xl border border-rose-200 bg-rose-50 px-6 py-4 text-rose-700 text-sm font-semibold flex items-center gap-3">
+            <AlertCircle className="w-5 h-5" />
+            {error}
         </div>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-        <StatCard
-          title="Total Resources"
-          value={resources.length}
-          subtitle="Facilities and assets available (all time)"
-          tone="indigo"
-          loading={loading}
-        />
-        <StatCard
-          title="Pending Bookings"
-          value={pendingBookings}
-          subtitle="In selected date range"
-          tone="amber"
-          loading={loading}
-        />
-        <StatCard
-          title="Open Tickets"
-          value={openTickets}
-          subtitle="OPEN + IN_PROGRESS in selected range"
-          tone="emerald"
-          loading={loading}
-        />
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
-        <StatCard
-          title="Approved Bookings"
-          value={approvedBookings}
-          subtitle="Approved within selected range"
-          tone="indigo"
-          loading={loading}
-        />
-        <StatCard
-          title="Rejected Bookings"
-          value={rejectedBookings}
-          subtitle="Rejected within selected range"
-          tone="amber"
-          loading={loading}
-        />
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-          <h2 className="text-lg font-black text-slate-900">Top Resources</h2>
-          <p className="text-sm text-slate-500 mt-1">Most frequently booked resources in selected range</p>
-          <div className="mt-5 space-y-3">
-            {loading ? (
-              <div className="text-slate-500 text-sm flex items-center gap-2">
-                <Loader className="w-4 h-4 animate-spin" />
-                Loading usage data...
-              </div>
-            ) : topResources.length === 0 ? (
-              <p className="text-slate-400 text-sm">No booking records available yet.</p>
-            ) : (
-              topResources.map((item, index) => (
-                <div key={`${item.name}-${index}`} className="flex items-center justify-between border border-slate-100 rounded-xl px-4 py-3">
-                  <span className="font-semibold text-slate-800">{item.name}</span>
-                  <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-100">
-                    {item.count} bookings
-                  </span>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-
-        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-          <div className="flex items-center gap-2">
-            <Clock3 className="w-5 h-5 text-amber-600" />
-            <h2 className="text-lg font-black text-slate-900">Peak Booking Hours</h2>
-          </div>
-          <p className="text-sm text-slate-500 mt-1">Busiest hours based on booking start times in selected range</p>
-          <div className="mt-5 space-y-3">
-            {loading ? (
-              <div className="text-slate-500 text-sm flex items-center gap-2">
-                <Loader className="w-4 h-4 animate-spin" />
-                Loading hourly data...
-              </div>
-            ) : peakHours.length === 0 ? (
-              <p className="text-slate-400 text-sm">No booking time data available yet.</p>
-            ) : (
-              peakHours.map((item) => (
-                <div key={item.hour} className="flex items-center justify-between border border-slate-100 rounded-xl px-4 py-3">
-                  <div className="w-full">
-                    <div className="flex items-center justify-between gap-3">
-                      <span className="font-semibold text-slate-800">
-                        {item.hour}:00 - {String((Number(item.hour) + 1) % 24).padStart(2, '0')}:00
-                      </span>
-                      <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-100">
-                        {item.count} bookings
-                      </span>
-                    </div>
-                    <div className="mt-2 h-2.5 rounded-full bg-slate-100 overflow-hidden">
-                      <div
-                        className="h-full rounded-full bg-amber-500"
-                        style={{ width: `${Math.max(8, (item.count / peakHourMax) * 100)}%` }}
-                      />
-                    </div>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-      </div>
-
+      {/* Quick Actions (Moved to Top) */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {adminModules.map((module) => (
           <Link
             key={module.title}
             to={module.link}
-            className="group bg-white border border-slate-200 rounded-2xl p-6 shadow-sm hover:shadow-lg transition-all hover:-translate-y-1"
+            className="group bg-white rounded-3xl p-6 border border-slate-200 shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 relative overflow-hidden flex items-center gap-5"
           >
-            <div className={`w-12 h-12 rounded-xl ${module.color} text-white flex items-center justify-center`}>
-              <module.icon className="w-6 h-6" />
+            <div className={`absolute inset-0 bg-gradient-to-r ${module.color} opacity-0 group-hover:opacity-5 transition-opacity duration-300`} />
+            <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${module.color} text-white flex items-center justify-center shadow-lg ${module.shadow} group-hover:scale-110 transition-transform duration-300`}>
+              <module.icon className="w-7 h-7" />
             </div>
-            <div className="mt-4">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{module.badge}</span>
-              <h2 className="mt-1 text-xl font-bold text-slate-900">{module.title}</h2>
-              <p className="mt-2 text-sm text-slate-500">{module.description}</p>
+            <div className="relative z-10">
+              <h2 className="text-lg font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">{module.title}</h2>
+              <p className="text-sm text-slate-500">{module.description}</p>
             </div>
+            <ArrowRight className="w-5 h-5 text-slate-300 absolute right-6 group-hover:text-indigo-500 transition-colors group-hover:translate-x-1" />
           </Link>
         ))}
+      </div>
+
+      {/* Stats Grid */}
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+        <StatCard title="Total Resources" value={resources.length} icon={Building2} color="text-indigo-600" bg="bg-indigo-100" loading={loading} />
+        <StatCard title="Pending Approvals" value={pendingBookings} icon={Clock3} color="text-amber-600" bg="bg-amber-100" loading={loading} alert={pendingBookings > 0} />
+        <StatCard title="Open Tickets" value={openTickets} icon={Wrench} color="text-rose-600" bg="bg-rose-100" loading={loading} alert={openTickets > 0} />
+        <StatCard title="Approved Bookings" value={approvedBookings} icon={CheckCircle2} color="text-emerald-600" bg="bg-emerald-100" loading={loading} />
+        <StatCard title="Rejected" value={rejectedBookings} icon={XCircle} color="text-slate-600" bg="bg-slate-100" loading={loading} />
+      </div>
+
+      {/* Analytics & Recent Activity */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        {/* Charts Section */}
+        <div className="lg:col-span-2 space-y-6">
+            <div className="bg-white border border-slate-200 rounded-3xl p-6 md:p-8 shadow-sm">
+                <div className="flex items-center justify-between mb-8">
+                    <div>
+                        <h2 className="text-xl font-bold text-slate-900">Peak Booking Hours</h2>
+                        <p className="text-sm text-slate-500 mt-1">Traffic distribution throughout the day</p>
+                    </div>
+                    <div className="w-10 h-10 rounded-full bg-indigo-50 flex items-center justify-center">
+                        <TrendingUp className="w-5 h-5 text-indigo-600" />
+                    </div>
+                </div>
+                
+                <div className="h-72 w-full">
+                    {loading ? (
+                    <div className="w-full h-full flex items-center justify-center text-slate-400 gap-2"><Loader className="w-5 h-5 animate-spin" /> Loading...</div>
+                    ) : peakHours.length === 0 ? (
+                    <div className="w-full h-full flex items-center justify-center text-slate-400">No data available</div>
+                    ) : (
+                    <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={peakHours}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                        <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 12}} dy={10} />
+                        <YAxis axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 12}} dx={-10} />
+                        <Tooltip cursor={{fill: '#f1f5f9'}} contentStyle={{borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} />
+                        <Bar dataKey="Bookings" fill="#6366f1" radius={[4, 4, 0, 0]} barSize={30} />
+                        </BarChart>
+                    </ResponsiveContainer>
+                    )}
+                </div>
+            </div>
+
+            <div className="bg-white border border-slate-200 rounded-3xl p-6 md:p-8 shadow-sm">
+                <h2 className="text-xl font-bold text-slate-900 mb-8">Top Resources Distribution</h2>
+                <div className="h-72 w-full flex items-center">
+                    {loading ? (
+                    <div className="w-full h-full flex items-center justify-center text-slate-400 gap-2"><Loader className="w-5 h-5 animate-spin" /> Loading...</div>
+                    ) : topResources.length === 0 ? (
+                    <div className="w-full h-full flex items-center justify-center text-slate-400">No data available</div>
+                    ) : (
+                    <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                        <Pie
+                            data={topResources}
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={70}
+                            outerRadius={100}
+                            paddingAngle={5}
+                            dataKey="value"
+                        >
+                            {topResources.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                            ))}
+                        </Pie>
+                        <Tooltip contentStyle={{borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} />
+                        </PieChart>
+                    </ResponsiveContainer>
+                    )}
+                    
+                    {!loading && topResources.length > 0 && (
+                        <div className="w-1/2 pl-4 space-y-3">
+                            {topResources.map((res, idx) => (
+                                <div key={idx} className="flex items-center gap-3">
+                                    <div className="w-3 h-3 rounded-full" style={{backgroundColor: COLORS[idx % COLORS.length]}} />
+                                    <div className="flex-1 text-sm font-medium text-slate-700 truncate">{res.name}</div>
+                                    <div className="text-sm font-bold text-slate-900">{res.value}</div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
+
+        {/* Recent Activity Feed */}
+        <div className="bg-white border border-slate-200 rounded-3xl p-6 md:p-8 shadow-sm flex flex-col">
+            <h2 className="text-xl font-bold text-slate-900 mb-2">Requires Attention</h2>
+            <p className="text-sm text-slate-500 mb-8">Recent pending bookings and open tickets.</p>
+            
+            <div className="flex-1 space-y-4">
+                {loading ? (
+                    <div className="flex items-center justify-center h-full text-slate-400 gap-2"><Loader className="w-5 h-5 animate-spin" /> Loading...</div>
+                ) : recentActivity.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center h-full text-center space-y-3">
+                        <div className="w-16 h-16 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-500">
+                            <CheckCircle2 className="w-8 h-8" />
+                        </div>
+                        <div>
+                            <div className="font-bold text-slate-900">All caught up!</div>
+                            <div className="text-sm text-slate-500">No pending tasks at the moment.</div>
+                        </div>
+                    </div>
+                ) : (
+                    recentActivity.map((item, idx) => (
+                        <Link 
+                            key={idx} 
+                            to={item.link}
+                            className="block p-4 rounded-2xl border border-slate-100 bg-slate-50 hover:bg-indigo-50 hover:border-indigo-100 transition-colors group"
+                        >
+                            <div className="flex items-start gap-3">
+                                <div className={`mt-1 w-2 h-2 rounded-full ${item.type === 'booking' ? 'bg-amber-500' : 'bg-rose-500'}`} />
+                                <div className="flex-1">
+                                    <h3 className="text-sm font-bold text-slate-900 group-hover:text-indigo-700 transition-colors line-clamp-1">{item.title}</h3>
+                                    <p className="text-xs text-slate-500 mt-1">
+                                        {new Date(item.date).toLocaleDateString()} at {new Date(item.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                    </p>
+                                </div>
+                                <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-indigo-600" />
+                            </div>
+                        </Link>
+                    ))
+                )}
+            </div>
+            
+            <div className="mt-6 pt-6 border-t border-slate-100">
+                <Link to="/admin/bookings" className="text-sm font-bold text-indigo-600 hover:text-indigo-800 flex items-center justify-center gap-2">
+                    View All Activity <ArrowRight className="w-4 h-4" />
+                </Link>
+            </div>
+        </div>
+
       </div>
     </div>
   );
 };
 
-const StatCard = ({ title, value, subtitle, tone, loading }) => {
-  const toneStyles = {
-    indigo: 'bg-indigo-50 border-indigo-100 text-indigo-700',
-    amber: 'bg-amber-50 border-amber-100 text-amber-700',
-    emerald: 'bg-emerald-50 border-emerald-100 text-emerald-700',
-  };
-
+const StatCard = ({ title, value, icon: Icon, color, bg, loading, alert }) => {
   return (
-    <div className={`rounded-2xl border p-4 ${toneStyles[tone] || toneStyles.indigo}`}>
-      <p className="text-xs font-bold uppercase tracking-wider opacity-80">{title}</p>
-      <p className="mt-1 text-3xl font-black">
-        {loading ? <Loader className="w-6 h-6 animate-spin" /> : value}
-      </p>
-      <p className="mt-2 text-xs font-semibold opacity-80">{subtitle}</p>
+    <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
+      {alert && (
+        <div className="absolute top-0 right-0 w-16 h-16 bg-rose-500/10 blur-xl rounded-bl-full" />
+      )}
+      <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-4 ${bg}`}>
+        <Icon className={`w-6 h-6 ${color}`} />
+      </div>
+      <div>
+        <p className="mt-1 text-3xl font-black text-slate-900">
+          {loading ? <Loader className="w-6 h-6 animate-spin text-slate-300" /> : value}
+        </p>
+        <p className="text-xs font-bold uppercase tracking-wider text-slate-500 mt-2">{title}</p>
+      </div>
     </div>
   );
 };

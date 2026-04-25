@@ -624,7 +624,8 @@ export default function ResourceCatalogue() {
                           </span>
                         </button>
                       </td>
-                      <td className="px-3 py-3 text-right whitespace-nowrap">
+                      <td className="px-3 py-3 text-right whitespace-nowrap flex items-center justify-end">
+                        <Link to={`/facilities/${r.id}`} className="px-2.5 py-1.5 rounded-xl border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold mr-1.5 inline-flex items-center">View</Link>
                         <button className="px-2.5 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 font-semibold mr-1.5" onClick={() => { setEditingResource(r); setShowModal(true); }}>Edit</button>
                         <button className="px-3 py-1.5 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 font-semibold" onClick={() => { setDeletingResource(r); setShowDeleteModal(true); }}>Delete</button>
                       </td>
