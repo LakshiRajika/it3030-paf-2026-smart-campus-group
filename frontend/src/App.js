@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, NavLink } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation, NavLink } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import Tickets from './pages/Tickets';
 import TicketDetail from './pages/TicketDetail';
@@ -20,6 +20,7 @@ import ManageResources from './pages/admin/ManageResources';
 import CheckInVerification from './pages/CheckInVerification';
 import ManageUsers from './pages/admin/ManageUsers';
 import TechnicianTasks from './pages/TechnicianTasks';
+import LandingPage from './pages/LandingPage';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import NotificationDropdown from './components/Notifications/NotificationDropdown';
 import './index.css';
@@ -27,10 +28,10 @@ import './index.css';
 const Layout = ({ children }) => {
   const { user, logout, hasRole } = useAuth();
   const location = useLocation();
-  const isLoginPage = location.pathname === '/login' || location.pathname === '/oauth2/redirect';
+  const isFullPage = location.pathname === '/login' || location.pathname === '/oauth2/redirect' || location.pathname === '/';
   const isAdmin = hasRole('ADMIN');
 
-  if (isLoginPage) return children;
+  if (isFullPage) return children;
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
@@ -124,7 +125,7 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/oauth2/redirect" element={<OAuth2RedirectHandler />} />
             <Route path="/unauthorized" element={<Unauthorized />} />
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/" element={<LandingPage />} />
 
             <Route path="/dashboard" element={
               <ProtectedRoute>

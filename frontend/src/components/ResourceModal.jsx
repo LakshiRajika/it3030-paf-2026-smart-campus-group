@@ -31,6 +31,7 @@ export default function ResourceModal({ resource, onSave, onClose }) {
   const [existingImageUrl, setExistingImageUrl] = useState("");
   const [amenities, setAmenities] = useState("");
   const [weeklySlots, setWeeklySlots] = useState([]);
+  const [formError, setFormError] = useState("");
 
   useEffect(() => {
     setName(resource?.name || "");
@@ -97,6 +98,25 @@ export default function ResourceModal({ resource, onSave, onClose }) {
 
   const submit = (e) => {
     e.preventDefault();
+    setFormError("");
+    
+    if (!name.trim()) {
+      setFormError("Resource name is required.");
+      return;
+    }
+    if (!location.trim()) {
+      setFormError("Location is required.");
+      return;
+    }
+    if (availableFrom && availableTo && availableFrom >= availableTo) {
+      setFormError("Available To time must be strictly after Available From time.");
+      return;
+    }
+    if (weeklySlots.some(s => s.from && s.to && s.from >= s.to)) {
+      setFormError("All weekly slots must have a valid time range (From time must be before To time).");
+      return;
+    }
+
     onSave?.({ ...payload, imageFile });
   };
 
@@ -112,10 +132,17 @@ export default function ResourceModal({ resource, onSave, onClose }) {
 
         <form onSubmit={submit} className="flex-1 min-h-0 flex flex-col">
           <div className="p-5 overflow-y-auto">
+            {formError && (
+              <div className="mb-4 p-3 rounded-xl bg-rose-50 border border-rose-200 text-sm font-semibold text-rose-700 animate-fade-in flex items-start gap-2">
+                <span className="text-rose-600">⚠️</span>
+                {formError}
+              </div>
+            )}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2">
               <label className="block text-xs font-bold text-slate-600 mb-1">Name</label>
               <input
+                required
                 className="w-full rounded-xl border border-slate-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-200"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -168,6 +195,7 @@ export default function ResourceModal({ resource, onSave, onClose }) {
             <div>
               <label className="block text-xs font-bold text-slate-600 mb-1">Location</label>
               <input
+                required
                 className="w-full rounded-xl border border-slate-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-200"
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
