@@ -5,6 +5,7 @@ import ResourceModal from "../components/ResourceModal";
 import ConfirmModal from "../components/ConfirmModal";
 import SearchFilter from "../components/SearchFilter";
 import { useAuth } from "../context/AuthContext";
+import bookingService from "../services/bookingService";
 
 const TYPES = ["LECTURE_HALL", "LAB", "MEETING_ROOM", "EQUIPMENT"];
 const ITEMS_PER_PAGE = 9;
@@ -82,6 +83,7 @@ export default function ResourceCatalogue() {
   const [adminStatFilter, setAdminStatFilter] = useState("ALL");
   const [userPage, setUserPage] = useState(1);
   const [adminPage, setAdminPage] = useState(1);
+  const [bookedResourceIds, setBookedResourceIds] = useState(new Set());
   const [query, setQuery] = useState("");
   const [filters, setFilters] = useState({
     type: "",
@@ -147,6 +149,8 @@ export default function ResourceCatalogue() {
         if (filters.from && r.availableFrom && String(r.availableFrom).slice(0, 5) > filters.from) return false;
         if (filters.to && r.availableTo && String(r.availableTo).slice(0, 5) < filters.to) return false;
         if (!matchesAvailabilityForDate(r, filters.date, filters.from, filters.to)) return false;
+        // Exclude resources that have a confirmed booking in the requested slot
+        if (bookedResourceIds.has(r.id)) return false;
         if (q) {
           const text = `${r.name || ""} ${r.location || ""} ${humanize(r.type)}`.toLowerCase();
           if (!text.includes(q)) return false;
@@ -158,7 +162,32 @@ export default function ResourceCatalogue() {
         if (sortBy === "status") return String(a.status || "").localeCompare(String(b.status || ""));
         return String(a.name || "").localeCompare(String(b.name || ""));
       });
-  }, [resources, filters, query, sortBy]);
+  }, [resources, filters, query, sortBy, bookedResourceIds]);
+
+  // Check real booking conflicts whenever date + both times are provided
+  useEffect(() => {
+    if (!filters.date || !filters.from || !filters.to || resources.length === 0) {
+      setBookedResourceIds(new Set());
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      const results = await Promise.all(
+        resources.map(async (r) => {
+          try {
+            const res = await bookingService.checkConflict(
+              r.id, filters.date, filters.from, filters.to
+            );
+            return res.hasConflict ? r.id : null;
+          } catch {
+            return null; // on error, don't hide the resource
+          }
+        })
+      );
+      if (!cancelled) setBookedResourceIds(new Set(results.filter(Boolean)));
+    })();
+    return () => { cancelled = true; };
+  }, [filters.date, filters.from, filters.to, resources]);
 
   const adminVisibleResources = useMemo(() => {
     if (!isAdmin) return filtered;
