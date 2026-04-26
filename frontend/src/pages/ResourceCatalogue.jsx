@@ -7,6 +7,7 @@ import SearchFilter from "../components/SearchFilter";
 import { useAuth } from "../context/AuthContext";
 
 const TYPES = ["LECTURE_HALL", "LAB", "MEETING_ROOM", "EQUIPMENT"];
+const ITEMS_PER_PAGE = 9;
 const API_ROOT = (process.env.REACT_APP_API_URL || "http://localhost:8081/api").replace(/\/api\/?$/, "");
 
 const humanize = (value) => String(value || "").replaceAll("_", " ");
@@ -79,6 +80,8 @@ export default function ResourceCatalogue() {
   const [selectedIds, setSelectedIds] = useState([]);
   const [adminFilteredResources, setAdminFilteredResources] = useState(null);
   const [adminStatFilter, setAdminStatFilter] = useState("ALL");
+  const [userPage, setUserPage] = useState(1);
+  const [adminPage, setAdminPage] = useState(1);
   const [query, setQuery] = useState("");
   const [filters, setFilters] = useState({
     type: "",
@@ -172,6 +175,15 @@ export default function ResourceCatalogue() {
       return String(a.name || "").localeCompare(String(b.name || ""));
     });
   }, [isAdmin, adminFilteredResources, resources, sortBy, filtered, adminStatFilter]);
+
+  // ── Pagination ────────────────────────────────────────────────────────────
+  const totalUserPages    = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
+  const paginatedFiltered = filtered.slice((userPage - 1) * ITEMS_PER_PAGE, userPage * ITEMS_PER_PAGE);
+  const totalAdminPages   = Math.max(1, Math.ceil(adminVisibleResources.length / ITEMS_PER_PAGE));
+  const paginatedAdmin    = adminVisibleResources.slice((adminPage - 1) * ITEMS_PER_PAGE, adminPage * ITEMS_PER_PAGE);
+  // Reset to page 1 when the underlying lists change
+  useEffect(() => { setUserPage(1); }, [filtered]);
+  useEffect(() => { setAdminPage(1); }, [adminVisibleResources]);
 
   const suggestions = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -416,7 +428,7 @@ export default function ResourceCatalogue() {
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-50">
-                          {filtered.map((r) => {
+                          {paginatedFiltered.map((r) => {
                             const live = getLiveStatus(r.status);
                             const avail =
                               r.availableFrom && r.availableTo
@@ -471,7 +483,7 @@ export default function ResourceCatalogue() {
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {filtered.map((r) => {
+                    {paginatedFiltered.map((r) => {
                       const live = getLiveStatus(r.status);
                       const hasWeeklySlots = Array.isArray(r.weeklySlots) && r.weeklySlots.length > 0;
                       const availabilityLabel =
@@ -532,6 +544,7 @@ export default function ResourceCatalogue() {
                     })}
                   </div>
                 )}
+                <Pagination page={userPage} totalPages={totalUserPages} onChange={setUserPage} />
               </>
             )}
           </section>
@@ -591,7 +604,7 @@ export default function ResourceCatalogue() {
                   </tr>
                 </thead>
                 <tbody>
-                  {adminVisibleResources.map((r) => (
+                  {paginatedAdmin.map((r) => (
                     <tr key={r.id} className="border-b border-slate-100 last:border-b-0">
                       <td className="px-2 py-2">
                         <input
@@ -635,6 +648,7 @@ export default function ResourceCatalogue() {
               </table>
             </div>
           </div>
+          <Pagination page={adminPage} totalPages={totalAdminPages} onChange={setAdminPage} />
         </>
       )}
 
@@ -717,3 +731,37 @@ function StatTile({ label, value, tone = "indigo", active, onClick }) {
   );
 }
 
+function Pagination({ page, totalPages, onChange }) {
+  if (totalPages <= 1) return null;
+  return (
+    <div className="flex items-center justify-center gap-2 mt-6">
+      <button
+        onClick={() => onChange(page - 1)}
+        disabled={page === 1}
+        className="px-3 py-1.5 rounded-xl border border-slate-200 bg-white text-sm font-semibold disabled:opacity-40 hover:bg-slate-50"
+      >
+        ← Prev
+      </button>
+      {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+        <button
+          key={p}
+          onClick={() => onChange(p)}
+          className={`px-3 py-1.5 rounded-xl border text-sm font-semibold transition-colors ${
+            p === page
+              ? "bg-indigo-600 text-white border-indigo-600"
+              : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50"
+          }`}
+        >
+          {p}
+        </button>
+      ))}
+      <button
+        onClick={() => onChange(page + 1)}
+        disabled={page === totalPages}
+        className="px-3 py-1.5 rounded-xl border border-slate-200 bg-white text-sm font-semibold disabled:opacity-40 hover:bg-slate-50"
+      >
+        Next →
+      </button>
+    </div>
+  );
+}
