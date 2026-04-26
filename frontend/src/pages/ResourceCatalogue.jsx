@@ -351,7 +351,7 @@ export default function ResourceCatalogue() {
         <div className="mt-6 space-y-5">
           <div className="bg-white border border-slate-200 rounded-2xl p-4">
             <h2 className="font-bold text-slate-900 mb-3">Smart Filters</h2>
-            <div className="grid grid-cols-1 md:grid-cols-6 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-7 gap-3">
               <select className="w-full rounded-xl border border-slate-200 px-3 py-2 bg-white" value={filters.type} onChange={(e) => setFilters((p) => ({ ...p, type: e.target.value }))}>
                 <option value="">All types</option>
                 {TYPES.map((t) => (
@@ -366,9 +366,21 @@ export default function ResourceCatalogue() {
               <input type="number" min="1" className="w-full rounded-xl border border-slate-200 px-3 py-2" placeholder="Min capacity" value={filters.minCapacity} onChange={(e) => setFilters((p) => ({ ...p, minCapacity: e.target.value }))} />
               <input className="w-full rounded-xl border border-slate-200 px-3 py-2" placeholder="Building / location" value={filters.location} onChange={(e) => setFilters((p) => ({ ...p, location: e.target.value }))} />
               <input type="date" className="w-full rounded-xl border border-slate-200 px-3 py-2" value={filters.date} onChange={(e) => setFilters((p) => ({ ...p, date: e.target.value }))} />
-              <div className="grid grid-cols-2 gap-2 md:col-span-1">
-                <input type="time" className="rounded-xl border border-slate-200 px-3 py-2" value={filters.from} onChange={(e) => setFilters((p) => ({ ...p, from: e.target.value }))} />
-                <input type="time" className="rounded-xl border border-slate-200 px-3 py-2" value={filters.to} onChange={(e) => setFilters((p) => ({ ...p, to: e.target.value }))} />
+              <div className="relative">
+                <span className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-slate-400">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <circle cx="12" cy="12" r="10" /><path strokeLinecap="round" d="M12 6v6l4 2" />
+                  </svg>
+                </span>
+                <input type="time" className="w-full rounded-xl border border-slate-200 pl-9 pr-3 py-2" placeholder="From" value={filters.from} onChange={(e) => setFilters((p) => ({ ...p, from: e.target.value }))} />
+              </div>
+              <div className="relative">
+                <span className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-slate-400">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <circle cx="12" cy="12" r="10" /><path strokeLinecap="round" d="M12 6v6l4 2" />
+                  </svg>
+                </span>
+                <input type="time" className="w-full rounded-xl border border-slate-200 pl-9 pr-3 py-2" placeholder="To" value={filters.to} onChange={(e) => setFilters((p) => ({ ...p, to: e.target.value }))} />
               </div>
             </div>
           </div>
