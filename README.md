@@ -154,9 +154,10 @@ cd backend
 ## 📖 API Documentation
 
 You can test the backend APIs using the pre-configured Postman collections located in the `/docs` folder:
-1. Import `docs/SmartCampus_Bookings_Postman.json` into Postman.
-2. Ensure you run the `Auth -> Login (Get Token)` request first. The script will automatically save your Bearer token and inject it into all subsequent requests.
-3. Test endpoints across Bookings, Resources, Users, and Tickets!
+1. **Import the Collections:** Import both `SmartCampus_Bookings_Postman.json` and `smart-campus-postman.json` into Postman.
+2. **Authentication:** Ensure you run the `Auth -> Login (Get Token)` request first. The script will automatically save your Bearer token and inject it into all subsequent requests.
+3. **Explore:** Test endpoints across all modules including Bookings, Resources, Users, and Tickets!
 
 ---
 *Developed for IT3030 PAF Assignment (2026).*
+
